@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-20C04F79EFBC}") = "SparkplugB", "SparkplugB\SparkplugB.csproj", "{48DEABFA-911E-4C33-A6A2-FCD0953329AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-20C04F79EFBC}") = "DriverSparkplugB", "DriverSparkplugB\DriverSparkplugB.csproj", "{7171CCF1-A644-44D8-9055-7E1252D51821}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{48DEABFA-911E-4C33-A6A2-FCD0953329AF}.Debug|x64.ActiveCfg = Debug|x64
+		{48DEABFA-911E-4C33-A6A2-FCD0953329AF}.Debug|x64.Build.0 = Debug|x64
+		{48DEABFA-911E-4C33-A6A2-FCD0953329AF}.Debug|x86.ActiveCfg = Debug|x86
+		{48DEABFA-911E-4C33-A6A2-FCD0953329AF}.Debug|x86.Build.0 = Debug|x86
+		{48DEABFA-911E-4C33-A6A2-FCD0953329AF}.Release|x64.ActiveCfg = Release|x64
+		{48DEABFA-911E-4C33-A6A2-FCD0953329AF}.Release|x64.Build.0 = Release|x64
+		{48DEABFA-911E-4C33-A6A2-FCD0953329AF}.Release|x86.ActiveCfg = Release|x86
+		{48DEABFA-911E-4C33-A6A2-FCD0953329AF}.Release|x86.Build.0 = Release|x86
+		{7171CCF1-A644-44D8-9055-7E1252D51821}.Debug|x64.ActiveCfg = Debug|x64
+		{7171CCF1-A644-44D8-9055-7E1252D51821}.Debug|x64.Build.0 = Debug|x64
+		{7171CCF1-A644-44D8-9055-7E1252D51821}.Debug|x86.ActiveCfg = Debug|x86
+		{7171CCF1-A644-44D8-9055-7E1252D51821}.Debug|x86.Build.0 = Debug|x86
+		{7171CCF1-A644-44D8-9055-7E1252D51821}.Release|x64.ActiveCfg = Release|x64
+		{7171CCF1-A644-44D8-9055-7E1252D51821}.Release|x64.Build.0 = Release|x64
+		{7171CCF1-A644-44D8-9055-7E1252D51821}.Release|x86.ActiveCfg = Release|x86
+		{7171CCF1-A644-44D8-9055-7E1252D51821}.Release|x86.Build.0 = Release|x86
+		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Debug|x64.Build.0 = Debug|Any CPU
+		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Debug|x86.Build.0 = Debug|Any CPU
+		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Release|x64.ActiveCfg = Release|Any CPU
+		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Release|x64.Build.0 = Release|Any CPU
+		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Release|x86.ActiveCfg = Release|Any CPU
+		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
