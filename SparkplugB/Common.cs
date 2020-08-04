@@ -16,7 +16,7 @@ namespace SparkplugB
 {
 	public class OPCProperty
 	{
-		public const UInt32 Base = 0x04603000;
+		public const UInt32 Base = 0x0468D000;
 
 		// Channel / Broker
 		// RendRecs
