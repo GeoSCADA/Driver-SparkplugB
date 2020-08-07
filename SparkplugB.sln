@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-20C04F79EFBC}") = "SparkplugB", "SparkplugB\SparkplugB.csproj", "{48DEABFA-911E-4C33-A6A2-FCD0953329AF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SparkplugB", "SparkplugB\SparkplugB.csproj", "{48DEABFA-911E-4C33-A6A2-FCD0953329AF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-20C04F79EFBC}") = "DriverSparkplugB", "DriverSparkplugB\DriverSparkplugB.csproj", "{7171CCF1-A644-44D8-9055-7E1252D51821}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DriverSparkplugB", "DriverSparkplugB\DriverSparkplugB.csproj", "{7171CCF1-A644-44D8-9055-7E1252D51821}"
+EndProject
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "DriverNotifyInstaller", "DriverSparkplugBInstaller\DriverNotifyInstaller.wixproj", "{432264F7-EE9B-FF46-93C6-D857118BFF75}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,14 +33,12 @@ Global
 		{7171CCF1-A644-44D8-9055-7E1252D51821}.Release|x64.Build.0 = Release|x64
 		{7171CCF1-A644-44D8-9055-7E1252D51821}.Release|x86.ActiveCfg = Release|x86
 		{7171CCF1-A644-44D8-9055-7E1252D51821}.Release|x86.Build.0 = Release|x86
-		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Debug|x64.Build.0 = Debug|Any CPU
-		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Debug|x86.Build.0 = Debug|Any CPU
-		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Release|x64.ActiveCfg = Release|Any CPU
-		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Release|x64.Build.0 = Release|Any CPU
-		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Release|x86.ActiveCfg = Release|Any CPU
-		{8AE4CF58-5FC7-4379-AA4E-128BA4CA0919}.Release|x86.Build.0 = Release|Any CPU
+		{432264F7-EE9B-FF46-93C6-D857118BFF75}.Debug|x64.ActiveCfg = Debug|x86
+		{432264F7-EE9B-FF46-93C6-D857118BFF75}.Debug|x86.ActiveCfg = Debug|x86
+		{432264F7-EE9B-FF46-93C6-D857118BFF75}.Debug|x86.Build.0 = Debug|x86
+		{432264F7-EE9B-FF46-93C6-D857118BFF75}.Release|x64.ActiveCfg = Release|x86
+		{432264F7-EE9B-FF46-93C6-D857118BFF75}.Release|x86.ActiveCfg = Release|x86
+		{432264F7-EE9B-FF46-93C6-D857118BFF75}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
