@@ -3,6 +3,10 @@ Please refer to the file LICENSE.txt for terms relating to this code
 This is code for a Sparkplug B driver for Geo SCADA Expert, written in C# 
 for the Simple Driver Framework.
 
+Please read the Word file available from SE Exchange Shop for a guide
+to customization and implementation.
+Link: https://shop.exchange.se.com/en-US/apps/61767
+
 The driver is offered as source code which you can build with Visual 
 Studio. It includes the two parts of the driver and an installer, enabling 
 you to build a package to deploy to Geo SCADA Expert servers. It is not 
@@ -31,6 +35,4 @@ driver to the core product.
 You can discuss these features, driver development, MQTT and Sparkplug B 
 in the SE Exchange forums.
 
-Please read the Word file Sparkplug B Sample DDK Driver.docx for a guide
-to customization and implementation.
 

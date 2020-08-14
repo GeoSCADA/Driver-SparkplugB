@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SparkplugB", "SparkplugB\Sp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DriverSparkplugB", "DriverSparkplugB\DriverSparkplugB.csproj", "{7171CCF1-A644-44D8-9055-7E1252D51821}"
 EndProject
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "DriverNotifyInstaller", "DriverSparkplugBInstaller\DriverNotifyInstaller.wixproj", "{432264F7-EE9B-FF46-93C6-D857118BFF75}"
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "DriverSparkplugBInstaller", "DriverSparkplugBInstaller\DriverSparkplugBInstaller.wixproj", "{432264F7-EE9B-FF46-93C6-D857118BFF75}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1A216431-7EF3-4636-80BE-CECA921E8358}"
 	ProjectSection(SolutionItems) = preProject
