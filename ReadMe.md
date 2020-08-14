@@ -3,6 +3,7 @@ Please refer to the file LICENSE.txt for terms relating to this code
 This is code for a Sparkplug B driver for Geo SCADA Expert, written in C# 
 for the Simple Driver Framework.
 
+IMPORTANT
 Please read the Word file available from SE Exchange Shop for a guide
 to customization and implementation.
 Link: https://shop.exchange.se.com/en-US/apps/61767
