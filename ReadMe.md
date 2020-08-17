@@ -6,7 +6,7 @@ for the Simple Driver Framework.
 IMPORTANT
 Please read the Word file available from SE Exchange Shop for a guide
 to customization and implementation.
-Link: https://shop.exchange.se.com/en-US/apps/61767
+Link: https://shop.exchange.se.com/en-US/apps/61786/
 
 The driver is offered as source code which you can build with Visual 
 Studio. It includes the two parts of the driver and an installer, enabling 
