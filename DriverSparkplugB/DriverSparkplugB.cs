@@ -529,6 +529,14 @@ namespace DriverSparkplugB
             Log("ProcessInStatus");
             DrvCSScanner FD;
 
+			// To debug the payload content
+			//Console.Write("Payload: ");
+			//foreach ( byte b in data)
+			//{
+			//	Console.Write(b.ToString() + " ");
+			//}
+			//Console.WriteLine();
+
 			// Interpret ProtoBuf
 			Payload ConfigPayload;
 			try

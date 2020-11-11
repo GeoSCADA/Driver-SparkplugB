@@ -80,11 +80,11 @@
   <ItemGroup>
     <Reference Include="ClearScada.Client, Version=6.83.7417.1, Culture=neutral, PublicKeyToken=9e16b9dd55e2cd53, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\ClearSCADA\Binaries\X64\Release\ClearScada.Client.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Dev\ClearSCADA\Binaries\X64\Release\ClearScada.Client.dll</HintPath>
     </Reference>
     <Reference Include="ControlMicrosystems.ClearSCADA.DDK, Version=6.83.7417.1, Culture=neutral, PublicKeyToken=9e16b9dd55e2cd53, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\ClearSCADA\Binaries\X64\Release\ControlMicrosystems.ClearSCADA.DDK.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Dev\ClearSCADA\Binaries\X64\Release\ControlMicrosystems.ClearSCADA.DDK.dll</HintPath>
     </Reference>
     <Reference Include="Google.Protobuf, Version=3.12.2.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
       <HintPath>..\packages\Google.Protobuf.3.12.2\lib\net45\Google.Protobuf.dll</HintPath>
@@ -142,22 +142,11 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy $(TargetDir)\SparkplugB.dll C:\Dev\ClearSCADA\Binaries\X64\Debug\
-copy $(TargetDir)\SparkplugB.dll C:\Dev\ClearSCADA\Binaries\X64\Release\
-
-copy $(TargetDir)\SparkplugB.PDB C:\Dev\ClearSCADA\Binaries\X64\Debug\
+    <PostBuildEvent>copy $(TargetDir)\SparkplugB.dll C:\Dev\ClearSCADA\Binaries\X64\Release\
 copy $(TargetDir)\SparkplugB.PDB C:\Dev\ClearSCADA\Binaries\X64\Release\
-
-copy $(TargetDir)\M2Mqtt.Net.dll C:\Dev\ClearSCADA\Binaries\X64\Debug\
 copy $(TargetDir)\M2Mqtt.Net.dll C:\Dev\ClearSCADA\Binaries\X64\Release\
-
-copy $(TargetDir)\Google.Protobuf.dll C:\Dev\ClearSCADA\Binaries\X64\Debug\
 copy $(TargetDir)\Google.Protobuf.dll C:\Dev\ClearSCADA\Binaries\X64\Release\
-
-copy $(TargetPath) C:\Dev\ClearSCADA\Binaries\X64\Debug\
 copy $(TargetPath) C:\Dev\ClearSCADA\Binaries\X64\Release\
-
-copy $(TargetDir)\DriverSparkplugB.PDB C:\Dev\ClearSCADA\Binaries\X64\Debug\
 copy $(TargetDir)\DriverSparkplugB.PDB C:\Dev\ClearSCADA\Binaries\X64\Release\
 </PostBuildEvent>
   </PropertyGroup>

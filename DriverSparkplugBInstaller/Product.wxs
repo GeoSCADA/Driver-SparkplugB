@@ -19,6 +19,8 @@
           <Directory Id="INSTALLDIR" Name="ClearSCADA">
             <Component Id="DRIVERDLLS" Guid="948AEE65-FF95-4F43-B758-A9B27D29FA23" Win64="yes">
               <File Id="SparkplugB.dll" Name="SparkplugB.dll" Source="..\DriverSparkplugB\bin\x64\Debug\SparkplugB.dll" />
+              <File Id="M2Mqtt.Net.dll" Name="M2Mqtt.Net.dll" Source="..\DriverSparkplugB\bin\x64\Debug\M2Mqtt.Net.dll" />
+              <File Id="Google.Protobuf.dll" Name="Google.Protobuf.dll" Source="..\DriverSparkplugB\bin\x64\Debug\Google.Protobuf.dll" />
               <RegistryKey Root="HKLM" Key="SOFTWARE\Schneider Electric\ClearSCADA\DriverSparkplugB">
                 <RegistryValue Type="string" Value="SparkplugB"/>
                 <RegistryValue Type="string" Name="AssemblyName" Value="C:\\Program Files\\Schneider Electric\\ClearSCADA\\SparkplugB.dll" KeyPath="yes"/>
