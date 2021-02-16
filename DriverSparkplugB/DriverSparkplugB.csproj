@@ -141,12 +141,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy $(TargetDir)\SparkplugB.dll C:\Dev\ClearSCADA\Binaries\X64\Release\
-copy $(TargetDir)\SparkplugB.PDB C:\Dev\ClearSCADA\Binaries\X64\Release\
-copy $(TargetDir)\M2Mqtt.Net.dll C:\Dev\ClearSCADA\Binaries\X64\Release\
-copy $(TargetDir)\Google.Protobuf.dll C:\Dev\ClearSCADA\Binaries\X64\Release\
-copy $(TargetPath) C:\Dev\ClearSCADA\Binaries\X64\Release\
-copy $(TargetDir)\DriverSparkplugB.PDB C:\Dev\ClearSCADA\Binaries\X64\Release\
+    <PostBuildEvent>copy $(TargetDir)\SparkplugB.dll "C:\Program Files\Schneider Electric\ClearSCADA\"
+copy $(TargetDir)\SparkplugB.PDB "C:\Program Files\Schneider Electric\ClearSCADA\"
+copy $(TargetDir)\M2Mqtt.Net.dll "C:\Program Files\Schneider Electric\ClearSCADA\"
+copy $(TargetDir)\Google.Protobuf.dll "C:\Program Files\Schneider Electric\ClearSCADA\"
+copy $(TargetPath) "C:\Program Files\Schneider Electric\ClearSCADA\"
+copy $(TargetDir)\DriverSparkplugB.PDB "C:\Program Files\Schneider Electric\ClearSCADA\"
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
