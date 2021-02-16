@@ -16,7 +16,6 @@ using Org.Eclipse.Tahu.Protobuf;
 namespace DriverSparkplugB
 {
 
-
     class DriverSparkplugB
 	{
 		static void Main(string[] args)
@@ -150,9 +149,26 @@ namespace DriverSparkplugB
         {
             Log("Channel doConnect(): Call Conn...");
             string errorText;
-            bool s = connectTo((string)DBChannel.BrokerHost, DBChannel.BrokerPort, DBChannel.Username, DBChannel.Password, 
-                                DBChannel.MQTTVersion, DBChannel.ClientId, DBChannel.Security, 
-                                DBChannel.caCertFile, DBChannel.clientCertFile, out errorText);
+
+			ConnectivityOptions ConnOptions = new ConnectivityOptions
+			{
+				hostname = (string)DBChannel.BrokerHost,
+				portnumber = DBChannel.BrokerPort,
+				username = DBChannel.Username,
+				password = DBChannel.Password,
+				version = DBChannel.MQTTVersion,
+				clientId = DBChannel.ClientId,
+				security = DBChannel.Security,
+				caCertFile = DBChannel.caCertFile,
+				clientCertFile = DBChannel.clientCertFile,
+				clientCertFormat = DBChannel.ClientCertFormat,
+				clientCertPassword = DBChannel.ClientCertPassword,
+				CleanConnect = DBChannel.CleanConnect,
+				SubQoS = DBChannel.SubQoS,
+				PubQoS = DBChannel.PubQoS
+			};
+
+            bool s = connectTo(ConnOptions, out errorText);
 
             Log("Channel doConnect(): Call CheckIfBrokerIsActive...");
             // Check Broker's active status
@@ -265,15 +281,14 @@ namespace DriverSparkplugB
             }
         }
 
-        private bool connectTo(string hostname, UInt16 portnumber, string username, string password, 
-                                byte version, string clientId, byte security, string caCertFile, string clientCertFile, out string errorText)
+        private bool connectTo(ConnectivityOptions c, out string errorText)
         {
             try
             {
                 // create client instance
-                if (security == 0)
+                if (c.security == 0)
                 {
-                    client = new MqttClient(hostname, portnumber, false, MqttSslProtocols.None, null, null);
+                    client = new MqttClient(c.hostname, c.portnumber, false, MqttSslProtocols.None, null, null);
                 }
                 else
                 {
@@ -281,7 +296,7 @@ namespace DriverSparkplugB
                     X509Certificate clientCert;
                     try
                     {
-                        caCert = new X509Certificate(caCertFile);
+                        caCert = new X509Certificate(c.caCertFile);
                     }
                     catch (Exception e)
                     {
@@ -290,22 +305,34 @@ namespace DriverSparkplugB
                     }
                     try
                     {
-                        clientCert = new X509Certificate(clientCertFile);
+						if (c.clientCertFormat == 0) // DER
+						{
+							clientCert = new X509Certificate(c.clientCertFile);
+						}
+						else if (c.clientCertFormat == 1) // PFX
+						{
+							clientCert = new X509Certificate2(c.clientCertFile, c.clientCertPassword);
+						}
+						else
+                        {
+							LogAndEvent("Cert format not supported");
+							throw new Exception("Cert format not supported");
+                        }
                     }
                     catch (Exception e)
                     {
                         LogAndEvent("Error reading or creating certificate from Client Certificate file: " + e.Message);
                         throw e;
                     }
-                    client = new MqttClient(hostname, portnumber, true, caCert, clientCert, (MqttSslProtocols)security);
+                    client = new MqttClient(c.hostname, c.portnumber, true, caCert, clientCert, (MqttSslProtocols)c.security);
                 }
 
-                if (version == 0)
+                if (c.version == 0)
                 {
 					LogAndEvent("Protocol version 3.1");
                     client.ProtocolVersion = MqttProtocolVersion.Version_3_1;
                 }
-                else if (version == 1)
+                else if (c.version == 1)
                 {
 					LogAndEvent("Protocol version 3.1.1");
                     client.ProtocolVersion = MqttProtocolVersion.Version_3_1_1;
@@ -333,15 +360,16 @@ namespace DriverSparkplugB
 			//string clientId = Guid.NewGuid().ToString();
 			try
             {
-                if (username == null || username == "")
+				// Note AWS doesn't support retain, so use CleanConnect
+                if (c.username == null || c.username == "")
                 {
                     // create client instance 
-                    client.Connect(clientId, "", "", true, 1, true, StateTopic, DeathPayload, false, 60);
+                    client.Connect(c.clientId, "", "", !c.CleanConnect, 1, true, StateTopic, DeathPayload, c.CleanConnect, 60);
                 }
                 else
                 {
                     // create client instance with login.
-                    client.Connect(clientId, username, password, true, 1, true, StateTopic, DeathPayload, false, 60);
+                    client.Connect(c.clientId, c.username, c.password, !c.CleanConnect, 1, true, StateTopic, DeathPayload, c.CleanConnect, 60);
                 }
             }
             catch (Exception Fault)
@@ -355,13 +383,13 @@ namespace DriverSparkplugB
 			// Send birth certificate
 			string BirthPayload = "ONLINE";
 			byte[] BirthPayloadBytes = Encoding.ASCII.GetBytes( BirthPayload);
-			doPublish(StateTopic, BirthPayloadBytes, 1, true);
+			doPublish(StateTopic, BirthPayloadBytes, c.PubQoS, true);
 
 			// subscribe to the topic (namespace / group) with wildcard and QoS 2 MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE
 			// Can we do this to the local broker to ensure safe delivery?
 			string topic = this.DBChannel.NamespaceName + "/" + this.DBChannel.GroupId + "/#";
-            ushort s = client.Subscribe(new string[] { topic }, new byte[] { 2 });
-            LogAndEvent("Subscribed to: " + topic);
+            ushort s = client.Subscribe(new string[] { topic }, new byte[] { c.SubQoS });
+            LogAndEvent("Subscribed to: " + topic + " - with QoS: " + c.SubQoS.ToString());
             errorText = "";
 
             return true;
@@ -369,7 +397,16 @@ namespace DriverSparkplugB
 
 		public bool doPublish( string topic, byte [] message, byte qosLevel, bool retain)
 		{
-			ushort p = client.Publish(topic, message, qosLevel, retain);
+
+			if (!DBChannel.CleanConnect)
+			{
+				ushort p = client.Publish(topic, message, qosLevel, retain);
+			}
+			else
+            {
+				ushort p = client.Publish(topic, message, qosLevel, false); // For AWS that doesn't support retained flag currently
+			}
+
 			LogAndEvent("Published to: " + topic + " size: " + message.Length.ToString());
 			return true;
 		}
@@ -378,7 +415,8 @@ namespace DriverSparkplugB
         {
             this.SetFailReason("Connection Closed: " + e.ToString());
             LogAndEvent("MQTT Connection closed.");
-        }
+			SetStatus(ServerStatus.Failed, e.ToString());
+		}
 
         // 
         private void client_MqttMsgPublishReceived(object sender, uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublishEventArgs e)
@@ -2124,13 +2162,16 @@ namespace DriverSparkplugB
 
 		public override void OnControl(PointSourceEntry Point, object Value)
         {
-            if (Point.PointType.Name == "SparkplugBPointDg") // Entry.PointType == typeof(SparkplugBPointDg)
+			DrvSparkplugBBroker broker = (DrvSparkplugBBroker)Channel;
+			byte QoS = broker.DBChannel.PubQoS;
+
+			if (Point.PointType.Name == "SparkplugBPointDg") // Entry.PointType == typeof(SparkplugBPointDg)
 			{
-                ControlDigital(Point, Value);
+                ControlDigital(Point, Value, QoS);
             }
             else if (Point.PointType.Name == "SparkplugBPointAg") // Entry.PointType == typeof(SparkplugBPointAg)
 			{
-                ControlAnalogue(Point, Value);
+                ControlAnalogue(Point, Value, QoS);
             }
 			else
 			{
@@ -2138,27 +2179,25 @@ namespace DriverSparkplugB
             }
         }
 
-        private void ControlDigital(PointSourceEntry entry, object val)
+        private void ControlDigital(PointSourceEntry entry, object val, byte QoS)
         {
             SparkplugBPointDg point = (SparkplugBPointDg)(entry.DatabaseObject);
 			uint SPtype = (uint)((SparkplugBPointDg)entry.DatabaseObject).SPtype;
 			string SPname = ((SparkplugBPointDg)entry.DatabaseObject).SparkplugName;
 
-			SendControlMessage(val, SPtype, SPname);
-
+			SendControlMessage(val, SPtype, SPname, QoS);
 		}
 
-
-		private void ControlAnalogue(PointSourceEntry entry, object val)
+		private void ControlAnalogue(PointSourceEntry entry, object val, byte QoS)
 		{
 			SparkplugBPointAg point = (SparkplugBPointAg)(entry.DatabaseObject);
 			uint SPtype = (uint)((SparkplugBPointAg)entry.DatabaseObject).SPtype;
 			string SPname = ((SparkplugBPointAg)entry.DatabaseObject).SparkplugName;
 
-			SendControlMessage(val, SPtype, SPname);
-
+			SendControlMessage(val, SPtype, SPname, QoS);
 		}
-		private void SendControlMessage(Object value, uint SPtype, string SPname)
+
+		private void SendControlMessage(Object value, uint SPtype, string SPname, byte PubQoS)
 		{
 			// Build control message
 			Payload ControlMessage = new Payload();
@@ -2207,7 +2246,6 @@ namespace DriverSparkplugB
 					return;
 			}
 			
-
 			ControlMetric.Datatype = SPtype;
 			ControlMessage.Metrics.Add(ControlMetric);
 
@@ -2233,11 +2271,28 @@ namespace DriverSparkplugB
 			ControlMessage.Seq = (ulong)tx_seq;
 
 			bytes = ControlMessage.ToByteArray();
-			broker.doPublish( TopicName , bytes, 1, false);
+			broker.doPublish( TopicName , bytes, PubQoS, false);
 			// QoS=1, no retain
 
 			tx_seq++;
 		}
+	}
 
+	class ConnectivityOptions
+	{
+		public string hostname;
+		public UInt16 portnumber;
+		public string username;
+		public string password;
+		public byte version;
+		public string clientId;
+		public byte security;
+		public string caCertFile;
+		public string clientCertFile;
+		public byte clientCertFormat;
+		public string clientCertPassword;
+		public bool CleanConnect;
+		public byte SubQoS;
+		public byte PubQoS;
 	}
 }
