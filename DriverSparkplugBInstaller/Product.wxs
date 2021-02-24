@@ -23,7 +23,7 @@
               <File Id="Google.Protobuf.dll" Name="Google.Protobuf.dll" Source="..\DriverSparkplugB\bin\x64\Debug\Google.Protobuf.dll" />
               <RegistryKey Root="HKLM" Key="SOFTWARE\Schneider Electric\ClearSCADA\DriverSparkplugB">
                 <RegistryValue Type="string" Value="SparkplugB"/>
-                <RegistryValue Type="string" Name="AssemblyName" Value="C:\\Program Files\\Schneider Electric\\ClearSCADA\\SparkplugB.dll" KeyPath="yes"/>
+                <RegistryValue Type="string" Name="AssemblyName" Value="C:\Program Files\Schneider Electric\ClearSCADA\SparkplugB.dll" KeyPath="yes"/>
                 <RegistryValue Type="string" Name="TaskName" Value="DriverSparkplugB.exe"/>
               </RegistryKey>              
             </Component>
