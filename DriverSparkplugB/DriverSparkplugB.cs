@@ -1156,8 +1156,7 @@ namespace DriverSparkplugB
 			// Creating Field Device etc.
 
 			// Set field device properties
-			// Start with node and device. Checkset returns false if failed, 
-			// but we will ignore some failures as the property may be already set appropriately in the template
+			// ChannelId - ignore if set already - may be already set appropriately in the template
 
 			if (! CheckSet( FieldDevice, "ENodeId", NodeId))
 			{
@@ -1165,8 +1164,26 @@ namespace DriverSparkplugB
 				return false;
 			}
 
-			CheckSet( FieldDevice, "DeviceId", DeviceId);
-			CheckSet( FieldDevice, "ChannelId", this.DBChannel.Id);
+			if (FieldDevice.Id.ToInt32() == (Int32)this.DBChannel.Id)
+			{
+				LogAndEvent("Field Device has correct channel.");
+			}
+			else
+			{
+				if (!CheckSet(FieldDevice, "ChannelId", this.DBChannel.Id))
+				{
+					ErrorText = "Error writing device ChannelId.";
+					return false;
+				}
+			}
+
+			// DeviceId. Checkset returns false if failed, 
+			if (!CheckSet(FieldDevice, "DeviceId", DeviceId))
+			{
+				ErrorText = "Error writing device DeviceId.";
+				return false;
+			}
+
 
 			// Parent Node if this is a device
 			if (DeviceId != "")
