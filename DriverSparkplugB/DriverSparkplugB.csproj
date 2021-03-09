@@ -78,8 +78,9 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ClearScada.Client">
-      <HintPath>C:\Program Files\Schneider Electric\ClearSCADA\ClearScada.Client.dll</HintPath>
+    <Reference Include="ClearScada.Client, Version=6.84.7731.1, Culture=neutral, PublicKeyToken=9e16b9dd55e2cd53, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>c:\Program Files\Schneider Electric\ClearSCADA\ClearScada.Client.dll</HintPath>
     </Reference>
     <Reference Include="ControlMicrosystems.ClearSCADA.DDK, Version=6.83.7417.1, Culture=neutral, PublicKeyToken=9e16b9dd55e2cd53, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
@@ -92,6 +93,9 @@
     <Reference Include="M2Mqtt.Net, Version=4.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\M2Mqtt.4.3.0.0\lib\net45\M2Mqtt.Net.dll</HintPath>
       <Private>True</Private>
+    </Reference>
+    <Reference Include="SparkplugB">
+      <HintPath>..\SparkplugB\bin\x64\Debug\SparkplugB.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
@@ -109,10 +113,6 @@
     </Reference>
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml" />
-    <Reference Include="SparkplugB, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\SparkplugB\bin\x64\Debug\SparkplugB.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DriverSparkplugB.cs" />

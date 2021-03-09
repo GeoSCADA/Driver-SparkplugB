@@ -543,10 +543,14 @@ namespace SparkplugB
 
 		public override void OnValidateConfig(MessageInfo Errors)
         {
-			// ToDo - e.g. check ENodeId and DeviceId do not contain /, + or #
-			if (ENodeId == "")
+			// Don't validate templated nodes/devices
+			if (!IsTemplate())
 			{
-				Errors.Add(this, "ENodeId", "Edge Node name must not be blank.");
+				// ToDo - e.g. check ENodeId and DeviceId do not contain /, + or #
+				if (ENodeId == "")
+				{
+					Errors.Add(this, "ENodeId", "Edge Node name must not be blank.");
+				}
 			}
             base.OnValidateConfig(Errors);
         }
@@ -614,7 +618,7 @@ namespace SparkplugB
 				// Receive configuration for known device
 
 				// Flag to assume we write a new config, unless can't
-				bool writeNewConfig = true;
+				bool writeNewConfig;
 
                 LogSystemEvent("SparkplugBND", Severity, "Received Device Configuration." );
 				
