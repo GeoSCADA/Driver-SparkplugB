@@ -37,14 +37,40 @@ namespace DriverSparkplugB
 		}
 	}
 
+	[Serializable]
+	public class ConfigItem
+	{
+		public string NodeDeviceId;
+		public Payload birthData;
+
+		public ConfigItem(string _NodeDeviceId, Payload _config)
+		{
+			NodeDeviceId = _NodeDeviceId;
+			birthData = _config;
+		}
+
+		// Ready to configure boolean - depends on all info present, which it should be for Sparkplug
+		public bool Ready()
+		{
+			// We'll define birth readiness as having metrics. No metrics no Device will be created.
+			if (birthData.Metrics.Count > 0)
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
 
 
-    public class DrvSparkplugBBroker : DriverChannel<SparkplugBBroker>
+	public class DrvSparkplugBBroker : DriverChannel<SparkplugBBroker>
     {
         // List of known devices
         public Dictionary<String, DrvCSScanner> DeviceIndex = new Dictionary<String, DrvCSScanner>();
         // List of unknown devices. Persisted to database module as a string of uuid and names.
-        public Dictionary<string, configItem> configBuf = new Dictionary<string, configItem>();
+        public Dictionary<string, ConfigItem> configBuf = new Dictionary<string, ConfigItem>();
 		// List of pending data items to process, received in birth but need processing later.
 		public Dictionary<string, Payload> dataBuf = new Dictionary<string, Payload>();
 		// Last known online state
@@ -53,13 +79,6 @@ namespace DriverSparkplugB
 		private bool LastKnownConnect = false;
         // The MQTT client
         private MqttClient client;
-		// List of potentially new devices. Needed to retain conf required state in status, until config is completed
-		// Not needed at present for Sparkplug
-		public class ActionFlags
-		{
-			public bool confReq;
-		}
-		public Dictionary<string, ActionFlags> actionBuf = new Dictionary<string, ActionFlags>();
 
 		public void LogAndEvent( string Message)
 		{
@@ -148,7 +167,6 @@ namespace DriverSparkplugB
         private ServerStatus DoConnect()
         {
             Log("Channel doConnect(): Call Conn...");
-            string errorText;
 
 			ConnectivityOptions ConnOptions = new ConnectivityOptions
 			{
@@ -168,7 +186,7 @@ namespace DriverSparkplugB
 				PubQoS = DBChannel.PubQoS
 			};
 
-            bool s = ConnectTo(ConnOptions, out errorText);
+			bool s = ConnectTo(ConnOptions, out string errorText);
 
             Log("Channel doConnect(): Call CheckIfBrokerIsActive...");
             // Check Broker's active status
@@ -521,9 +539,8 @@ namespace DriverSparkplugB
 			// which is inconsistent with 7.1.1
 			// We will process a payload if present and send any bdSeq and seq to the server
 
-            DrvCSScanner FD;
-            if (DeviceIndex.TryGetValue(NodeDeviceId, out FD))
-            {
+			if (DeviceIndex.TryGetValue(NodeDeviceId, out DrvCSScanner FD))
+			{
 				// Interpret ProtoBuf
 				Int16 seqNo = 0;
 				Payload LWTPayload;
@@ -552,14 +569,14 @@ namespace DriverSparkplugB
 				App.SendReceiveObject(FD.DBScanner.Id, OPCProperty.SendRecRaiseScannerAlarm, data);
 
 				FD.SetStatus(SourceStatus.Offline);
-                FD.SetFailReason( "Received Death Message, seq=" + seqNo.ToString() );
-            }
-            else
-            {
-                // Unknown device disconnecting, just log to file
-                LogAndEvent("Received LWT for unknown device: " + NodeDeviceId);
-            }
-        }
+				FD.SetFailReason("Received Death Message, seq=" + seqNo.ToString());
+			}
+			else
+			{
+				// Unknown device disconnecting, just log to file
+				LogAndEvent("Received LWT for unknown device: " + NodeDeviceId);
+			}
+		}
 
 		// Incoming Birth Cert
         private void ProcessInStatus(string NodeDeviceId, byte[] data)
@@ -641,13 +658,12 @@ namespace DriverSparkplugB
             {
                 // Brand new device - not seen. 
                 LogAndEvent("Device not in database.");
-                configItem thisItem;
-                if (!configBuf.TryGetValue( NodeDeviceId, out thisItem))
-                {
-                    LogAndEvent("Device not buffered, adding to memory.");
-                    thisItem = new configItem(NodeDeviceId, ConfigPayload);
-                    configBuf.Add( NodeDeviceId, thisItem);
-                }
+				if (!configBuf.TryGetValue(NodeDeviceId, out ConfigItem thisItem))
+				{
+					LogAndEvent("Device not buffered, adding to memory.");
+					thisItem = new ConfigItem(NodeDeviceId, ConfigPayload);
+					configBuf.Add(NodeDeviceId, thisItem);
+				}
 				CheckReadyInitiateConfig(NodeDeviceId, thisItem);
 			}
         }
@@ -656,23 +672,22 @@ namespace DriverSparkplugB
 		private void HandleNewConfig( Payload P, DrvCSScanner FD)
 		{
 			FD.LogAndEvent("Request configuration update action within driver.");
-			string ErrorText;
-			if (UpdateFieldDevice( P, FD, out ErrorText))
+			if (UpdateFieldDevice(P, FD, out string ErrorText))
 			{
-				FD.LogAndEvent("Success modifying: " + FD.FullName );
+				FD.LogAndEvent("Success modifying: " + FD.FullName);
 			}
 			else
 			{
-				FD.LogAndEvent("Failed to modify: " + FD.FullName  + " " + ErrorText);
+				FD.LogAndEvent("Failed to modify: " + FD.FullName + " " + ErrorText);
 				// Should send receive to raise alarm.
 				App.SendReceiveObject(this.DBChannel.Id, OPCProperty.SendRecReportConfigError, "Failed to modify Configuration: " + FD.FullName + " " + ErrorText);
 			}
 		}
 
-		private void CheckReadyInitiateConfig(string NodeDeviceId, configItem thisItem)
+		private void CheckReadyInitiateConfig(string NodeDeviceId, ConfigItem thisItem)
         {
             // Do we have all 3 properties? Only check when Config is received.
-            if (thisItem.ready())
+            if (thisItem.Ready())
             {
                 // Allow this to be auto-configured if the broker configuration permits it.
                 // Or raise an alert/notification so the user can manually initiate the process
@@ -680,19 +695,18 @@ namespace DriverSparkplugB
                 {
                     // Send request to configure. Ends up calling a method with the arguments in this driver exe.
                     LogAndEvent("Request configuration action within driver.");
-                    string ErrorText;
-                    if (CreateFieldDevice(NodeDeviceId, out ErrorText))
-                    {
-                        LogAndEvent("Success creating: " + NodeDeviceId );
-                    }
-                    else
-                    {
-                        LogAndEvent("Failed to create: " + NodeDeviceId + " " + ErrorText);
-                        // Should send receive to raise alarm.
-                        App.SendReceiveObject(this.DBChannel.Id, OPCProperty.SendRecReportConfigError, "Failed to create FD: " + NodeDeviceId + " " + ErrorText);
-                    }
-                    // Remove from queue
-                    configBuf.Remove(NodeDeviceId);
+					if (CreateFieldDevice(NodeDeviceId, out string ErrorText))
+					{
+						LogAndEvent("Success creating: " + NodeDeviceId);
+					}
+					else
+					{
+						LogAndEvent("Failed to create: " + NodeDeviceId + " " + ErrorText);
+						// Should send receive to raise alarm.
+						App.SendReceiveObject(this.DBChannel.Id, OPCProperty.SendRecReportConfigError, "Failed to create FD: " + NodeDeviceId + " " + ErrorText);
+					}
+					// Remove from queue
+					configBuf.Remove(NodeDeviceId);
                 }
                 else
                 {
@@ -709,9 +723,8 @@ namespace DriverSparkplugB
         private void ProcessInData(string NodeDeviceId, byte[] data)
         {
             LogAndEvent("ProcessInData");
-            DrvCSScanner FD;
-            if (DeviceIndex.TryGetValue(NodeDeviceId, out FD))
-            {
+			if (DeviceIndex.TryGetValue(NodeDeviceId, out DrvCSScanner FD))
+			{
 				// Interpret ProtoBuf
 				Payload DataPayload;
 				try
@@ -724,11 +737,11 @@ namespace DriverSparkplugB
 					App.SendReceiveObject(FD.DBScanner.Id, OPCProperty.SendRecFDProtocolError, "Error interpreting Data message for: " + NodeDeviceId);
 					FD.LogAndEvent("Completed end receive error interpreting data. ");
 					return;
-                }
+				}
 
 				// Sequence numbers
 				FD.rx_seq = (Int16)((FD.rx_seq + 1) % 256);
-				if (FD.rx_seq  != (Int16)DataPayload.Seq)
+				if (FD.rx_seq != (Int16)DataPayload.Seq)
 				{
 					// Mismatch alarm
 					FD.LogAndEvent("Mismatched sequence - was: " + DataPayload.Seq.ToString() + " Should be: " + FD.rx_seq.ToString());
@@ -745,13 +758,13 @@ namespace DriverSparkplugB
 					return;
 				}
 				FD.LogAndEvent("Interpreted data Payload OK. ");
-				FD.ProcessMetrics( DataPayload);
-            }
-            else
-            {
-                LogAndEvent("Cannot find device for this Data. " + NodeDeviceId);
-            }
-        }
+				FD.ProcessMetrics(DataPayload);
+			}
+			else
+			{
+				LogAndEvent("Cannot find device for this Data. " + NodeDeviceId);
+			}
+		}
 
 
 		public override void OnExecuteAction(ClearSCADA.DriverFramework.DriverTransaction Transaction)
@@ -763,8 +776,7 @@ namespace DriverSparkplugB
 					{
 						// Configure a device with this uuid
 						string NodeDeviceId = (string)Transaction.get_Args(0);
-						string ErrorText;
-						if (CreateFieldDevice(NodeDeviceId, out ErrorText))
+						if (CreateFieldDevice(NodeDeviceId, out string ErrorText))
 						{
 							this.CompleteTransaction(Transaction, 0, "Successfully created device: " + NodeDeviceId);
 						}
@@ -802,9 +814,8 @@ namespace DriverSparkplugB
 		{
 			// Find the device
 			// Need to connect to the database as a client
-			ClearScada.Client.Simple.Connection connection;
-			ClearScada.Client.Advanced.IServer AdvConnection;
-			if (!Connect2Net(DBChannel.ConfigUserName, DBChannel.ConfigPass, out connection, out AdvConnection))
+			if (!Connect2Net(DBChannel.ConfigUserName, DBChannel.ConfigPass, out ClearScada.Client.Simple.Connection connection,
+					out ClearScada.Client.Advanced.IServer AdvConnection))
 			{
 				ErrorText = ("Driver cannot connect client to server.");
 				return false;
@@ -821,27 +832,22 @@ namespace DriverSparkplugB
 				ErrorText = "Cannot find device from its Id? " + Fail.Message;
 				return false;
 			}
-			// Get parent group
-			ClearScada.Client.Simple.DBObject ParentGroup = FieldDevice.Parent;
 
 			// Call function to do this all, starting with the UUID
 			Log("Reconfigure Device And Children");
-			return ReconfigureDeviceAndChildren( jc, FieldDevice, ParentGroup, connection, AdvConnection, out ErrorText);
+			return ReconfigureDeviceAndChildren( jc, FieldDevice, connection, AdvConnection, out ErrorText);
 		}
 
 		public bool CreateFieldDevice(string NodeDeviceId, out string ErrorText)
 		{
 			// Need to connect to the database as a client
-			ClearScada.Client.Simple.Connection connection;
-			ClearScada.Client.Advanced.IServer AdvConnection;
-			if (!Connect2Net(DBChannel.ConfigUserName, DBChannel.ConfigPass, out connection, out AdvConnection))
+			if (!Connect2Net(DBChannel.ConfigUserName, DBChannel.ConfigPass, out ClearScada.Client.Simple.Connection connection, out ClearScada.Client.Advanced.IServer AdvConnection))
 			{
 				ErrorText = ("Driver cannot connect client to server.");
 				return false;
 			}
 
-			configItem thisItem;
-			if (!configBuf.TryGetValue(NodeDeviceId, out thisItem))
+			if (!configBuf.TryGetValue(NodeDeviceId, out ConfigItem thisItem))
 			{
 				ErrorText = ("Cannot find device config message in configuration buffer.");
 				return false;
@@ -917,7 +923,7 @@ namespace DriverSparkplugB
 			// Define FieldDevice here
 			ClearScada.Client.Simple.DBObject FieldDevice = null;
 			// The group our Field Device sits in
-			ClearScada.Client.Simple.DBObject Instance = null;
+			ClearScada.Client.Simple.DBObject Instance;
 			// We need to get this to be able to create an instance or a group to contain the Node or Device
 			Int32 ParentNodeId = 0;
 
@@ -949,8 +955,10 @@ namespace DriverSparkplugB
 				{
 					LogAndEvent("Not Found Parent Id" );
 					// No, so must be instance Node - do this recursively with the NodeId and an empty payload
-					Payload EmptyParent = new Payload();
-					EmptyParent.Timestamp = birthData.Timestamp;
+					Payload EmptyParent = new Payload
+					{
+						Timestamp = birthData.Timestamp
+					};
 					if ( !CreateFieldDeviceObjects( NodeId, EmptyParent, connection, AdvConnection, out ErrorText))
 					{
 						ErrorText += " (creating empty parent Node)";
@@ -1205,7 +1213,7 @@ namespace DriverSparkplugB
 			App.SendReceiveObject((uint)FieldDevice.Id.ToInt32(), OPCProperty.SendRecProcessBCStatus, bytes, ref ReplyObject); // Birth data.
 
 			// Set properties function
-			bool status = ReconfigureDeviceAndChildren(birthData, FieldDevice, Instance, connection, AdvConnection, out ErrorText);
+			bool status = ReconfigureDeviceAndChildren(birthData, FieldDevice, connection, AdvConnection, out ErrorText);
 			if (!status)
 			{
 				return false;
@@ -1354,7 +1362,6 @@ namespace DriverSparkplugB
 
 		private bool ReconfigureDeviceAndChildren(	Payload jc, 
 													ClearScada.Client.Simple.DBObject FieldDevice,
-													ClearScada.Client.Simple.DBObject ParentInstance,
 													ClearScada.Client.Simple.Connection connection,
 													ClearScada.Client.Advanced.IServer AdvConnection,
 													out string ErrorText)
@@ -1375,8 +1382,7 @@ namespace DriverSparkplugB
 					//csType = "SparkplugBPointDg";
 					//csType = "SparkplugBPointSt";
 					//csType = "SparkplugBPointTm";
-					string csType = "";
-					csType = GetSparkplugTypeName(p.Datatype);
+					string csType = GetSparkplugTypeName(p.Datatype);
 
 					if (csType == "")
 					{
@@ -1704,7 +1710,10 @@ namespace DriverSparkplugB
 			return false;
 		}
 
+		// Could be used in property setting to avoid reset of something a user changed manually
+#pragma warning disable IDE0051 // Remove unused private members
 		private bool CheckSetIfZero(ClearScada.Client.Simple.DBObject CSObj, string FieldName, ValueType PropValue)
+#pragma warning restore IDE0051 // Remove unused private members
 		{
 			if (PropValue != null)
 			{
@@ -1846,12 +1855,11 @@ namespace DriverSparkplugB
 			// Unusual, as being done before setting source status online
 			// Also done in OnScan, but that seems to take a long time
 			DrvSparkplugBBroker broker = (DrvSparkplugBBroker)Channel;
-			Payload DataPayload;
 			if (broker.dataBuf.Count > 0)
 			{
 				LogAndEvent("Data buffer not empty (in OnDefine).");
 
-				if (broker.dataBuf.TryGetValue(this.DBScanner.NodeDevice, out DataPayload))
+				if (broker.dataBuf.TryGetValue(this.DBScanner.NodeDevice, out Payload DataPayload))
 				{
 					LogAndEvent("Process pending data from Birth.");
 					ProcessMetrics(DataPayload);
@@ -1871,26 +1879,15 @@ namespace DriverSparkplugB
 		{
 			DrvSparkplugBBroker broker = (DrvSparkplugBBroker)Channel;
 
-			// Action flags are only set for existing devices. New ones rely on this list here:
-			if (broker.actionBuf.ContainsKey(FullName))
-			{
-				LogAndEvent("Unbuffering new devices requests.");
-				var aflags = broker.actionBuf[FullName];
-
-				// Not needed at present for Sparkplug
-				broker.actionBuf.Remove(FullName);
-			}
-
 			// This is used to pick up and process pending data, for example the
 			// Birth message in Sparkplug can contain data which can't be processed until
 			// the objects are all configured.
 			// Also done in OnDefine, which generally gets there before this try in OnScan
-			Payload DataPayload;
 			if (broker.dataBuf.Count > 0)
 			{
 				LogAndEvent("Data buffer not empty (in OnScan).");
 
-				if (broker.dataBuf.TryGetValue(this.DBScanner.NodeDevice, out DataPayload))
+				if (broker.dataBuf.TryGetValue(this.DBScanner.NodeDevice, out Payload DataPayload))
 				{
 					LogAndEvent("Process pending data from Birth.");
 					ProcessMetrics(DataPayload);
@@ -2103,7 +2100,7 @@ namespace DriverSparkplugB
 			DateTime DataTime = DateTime.UtcNow;
 			if (r.Timestamp > 0)
 			{
-				DataTime = util.UnixTimeStampMillisToDateTime(r.Timestamp);
+				DataTime = Util.UnixTimeStampMillisToDateTime(r.Timestamp);
 			}
 			// datatype - the numeric type code
 			// is_historical - boolean. Can use this in future to skip processing of current data if this is True
@@ -2197,8 +2194,8 @@ namespace DriverSparkplugB
         private void ControlDigital(PointSourceEntry entry, object val, byte QoS)
         {
             SparkplugBPointDg point = (SparkplugBPointDg)(entry.DatabaseObject);
-			uint SPtype = (uint)((SparkplugBPointDg)entry.DatabaseObject).SPtype;
-			string SPname = ((SparkplugBPointDg)entry.DatabaseObject).SparkplugName;
+			uint SPtype = (uint)point.SPtype;
+			string SPname = point.SparkplugName;
 
 			SendControlMessage(val, SPtype, SPname, QoS);
 		}
@@ -2206,8 +2203,8 @@ namespace DriverSparkplugB
 		private void ControlAnalogue(PointSourceEntry entry, object val, byte QoS)
 		{
 			SparkplugBPointAg point = (SparkplugBPointAg)(entry.DatabaseObject);
-			uint SPtype = (uint)((SparkplugBPointAg)entry.DatabaseObject).SPtype;
-			string SPname = ((SparkplugBPointAg)entry.DatabaseObject).SparkplugName;
+			uint SPtype = (uint)point.SPtype;
+			string SPname = point.SparkplugName;
 
 			SendControlMessage(val, SPtype, SPname, QoS);
 		}
@@ -2215,15 +2212,18 @@ namespace DriverSparkplugB
 		private void SendControlMessage(Object value, uint SPtype, string SPname, byte PubQoS)
 		{
 			// Build control message
-			Payload ControlMessage = new Payload();
-
-			// UTC time offset for Unix
-			ControlMessage.Timestamp = (ulong)(DateTime.UtcNow - DateTime.Parse("01/Jan/1970")).Milliseconds;
+			Payload ControlMessage = new Payload
+			{
+				// UTC time offset for Unix
+				Timestamp = (ulong)(DateTime.UtcNow - DateTime.Parse("01/Jan/1970")).Milliseconds
+			};
 
 			// Metric
-			Payload.Types.Metric ControlMetric = new Payload.Types.Metric();
-			ControlMetric.Name = SPname;
-			ControlMetric.Timestamp = ControlMessage.Timestamp;
+			Payload.Types.Metric ControlMetric = new Payload.Types.Metric
+			{
+				Name = SPname,
+				Timestamp = ControlMessage.Timestamp
+			};
 			// Get value based on type of control value
 			switch (SPtype)
 			{

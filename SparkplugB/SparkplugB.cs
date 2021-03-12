@@ -132,7 +132,7 @@ namespace SparkplugB
                         "The version of the MQTT connection.",
                         6, 2, OPCProperty.Base + 10)]
         [Enum(new String[] { "3.1", "3.1.1" })]
-        public Byte MQTTVersion = 1;
+        public Byte MQTTVersion = 1; // Default to 3.1.1
 
         [Label("Client Id", 6, 3)]
         [ConfigField("ClientId",
@@ -194,7 +194,7 @@ namespace SparkplugB
 					 11, 4, OPCProperty.Base + 203)]
 		public bool CleanConnect;
 
-		// AWS does not support 2, will insta-disconnect if you try
+		// AWS does not support QoS 2, will instantly disconnect if you try
 		[Label("Subscribe QoS", 12, 3)]
 		[ConfigField("SubQoS",
 				"The QoS to use for subscribing.",
@@ -215,6 +215,12 @@ namespace SparkplugB
                      "Automatically configure unknown devices.",
                      10, 2, OPCProperty.Base + 2)]
         public bool AutoConfig;
+
+		[Label("Automatic Reconfigure", 10, 3)]
+		[ConfigField("AutoReconfig",
+			 "Automatically reconfigure known devices and point properties and new points.",
+			 10, 4, OPCProperty.Base + 92)]
+		public Boolean AutoReconfig;
 
 		[Label("Server Port", 11, 1)]
         [ConfigField("ServerPort",
@@ -268,7 +274,7 @@ namespace SparkplugB
             }
         }
 
-        [DataField("LastConfigId", "Latest unconfigured device Node/ENodeId", OPCProperty.Base + 42, ReadOnly = true, ViewInfoTitle = "Latest Device for Configuration")]
+        [DataField("LastConfigId", "Next unconfigured device Node/ENodeId", OPCProperty.Base + 42, ReadOnly = true, ViewInfoTitle = "Latest Device for Configuration")]
         public string LastConfigId
         {
             get
@@ -287,11 +293,19 @@ namespace SparkplugB
 
         public override void OnValidateConfig(MessageInfo Errors)
         {
+			if (BrokerHost == "")
+			{
+				Errors.Add(this, "BrokerHost", "Broker Host address is blank.");
+			}
 			if (GroupId == "")
 			{
 				Errors.Add(this, "GroupId", "GroupId is blank.");
 			}
-            base.OnValidateConfig(Errors);
+			if (SCADAHostId == "")
+			{
+				Errors.Add(this, "SCADAHostId", "SCADAHostId is blank.");
+			}
+			base.OnValidateConfig(Errors);
         }
 
         public override void OnReceive(uint Type, object Data, ref object Reply)
@@ -320,22 +334,20 @@ namespace SparkplugB
                 LogSystemEvent("SparkplugBBroker", Severity, "Request for configuration initiation from: " + NodeDeviceId);
                 SparkplugChannelAlarm.Raise("SparkplugChannelNewDevice", "SparkplugB New Device Connected: " + NodeDeviceId, Severity, true);
 				// Raises an alarm which 'tells' user to check and then request config as a method action on the broker ConfigurePending
-            }
+				SetDataModified(true);
+			}
             else if (Type == OPCProperty.SendRecUpdateConfigQueue)
             {
-				// Commented the item below out/removed from the above action. All q items are refreshed by driver in one action whenever list changes.
-				// Save the device NodeDeviceId into a list so a user can ask for this to be configured - or rejected?
-				//Array.Resize(ref deviceBuf, deviceBuf.Length + 1);
-				//deviceBuf[deviceBuf.Length - 1] = i.uuid;
-
-				// Refresh the pending queue
+				// All q items are refreshed by driver in one action whenever list changes.
 				ConfigBuf = (string[])Data;
-            }
+				SetDataModified(true);
+			}
             else if (Type == OPCProperty.SendRecReportConfigError)
             {
                 String Err = (String)Data;
                 SparkplugChannelAlarm.Raise("SparkplugChannelDeviceConfig", "SparkplugB Error configuring device: " + Err, Alarm.AlarmType.Fleeting, Severity, true);
-            }
+				SetDataModified(true);
+			}
 			else if (Type == OPCProperty.SendRecLogBrokerEventText)
 			{
 				String Message = (String)Data;
@@ -346,6 +358,17 @@ namespace SparkplugB
                 base.OnReceive(Type, Data, ref Reply);
             }
         }
+
+		[Method("Configure Next Pending Device", "Configure next devices which is pending", OPCProperty.Base + 96)]
+		public void ConfigureNextPending()
+		{
+			if (ConfigBuf.Length > 0)
+			{
+				object[] ArgObject = new Object[1];
+				ArgObject[0] = ConfigBuf[0];
+				DriverAction(OPCProperty.DriverActionInitiateConfig, ArgObject, "Initiate configuration of new Device: " + ConfigBuf[0]);
+			}
+		}
 
 		[Method("Configure Pending Devices", "Configure all devices which are pending", OPCProperty.Base + 32)]
         public void ConfigurePending()
@@ -533,12 +556,12 @@ namespace SparkplugB
 
 		public void UpdateConfigChecksum()
 		{
-			ConfigChecksum = util.GetHashString(ConfigText);
+			ConfigChecksum = Util.GetHashString(ConfigText);
 		}
 
 		public bool ValidateConfigChecksum(string NewConfigText)
 		{
-			return (ConfigChecksum == util.GetHashString(NewConfigText));
+			return (ConfigChecksum == Util.GetHashString(NewConfigText));
 		}
 
 		public override void OnValidateConfig(MessageInfo Errors)
@@ -598,7 +621,7 @@ namespace SparkplugB
 				byte[] DataBytes = (byte [])(Data);
 				Payload bc = Payload.Parser.ParseFrom(DataBytes);
 
-				System.DateTime Timestamp = util.UnixTimeStampMillisToDateTime(bc.Timestamp);
+				System.DateTime Timestamp = Util.UnixTimeStampMillisToDateTime(bc.Timestamp);
 				LogSystemEvent("SparkplugBND", Severity, "Received Birth Certificate. Time: " + Timestamp.ToString());
 
 				// Record birth data
