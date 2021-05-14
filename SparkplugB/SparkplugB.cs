@@ -71,13 +71,12 @@ namespace SparkplugB
         }
 
 		// Need to modify the below if there is C
-		[Label("Namespace", 2, 3)]
+		[Label("Namespace Version", 2, 3)]
 		[ConfigField("Namespace",
-						"The namespace # of the Sparkplug protocol.",
+						"The namespace version of the Sparkplug protocol.",
 						2, 4, OPCProperty.Base + 110)]
 		[Enum(new String[] { "spBv1.0" })]
 		public Byte Namespace = 0;
-
 		[ConfigField("NamespaceName",
 						"The namespace name of the Sparkplug protocol.",
 						2, 4, OPCProperty.Base + 111,Flags = FormFlags.Hidden, ReadOnly = true)]
@@ -514,17 +513,13 @@ namespace SparkplugB
                     ViewInfoTitle = "Active State")]
         public bool ActiveState = true; 
 
-		[ConfigField("ConfigText", "The binary of the Device Config", 1, 1, OPCProperty.Base + 60, Flags = FormFlags.Hidden)]
-		public string ConfigText = ""; // As Base64 string.
-
 		[ConfigField("ConfigChecksum", "Checksum/hash of the Device Config", 1, 1, OPCProperty.Base + 88, Flags = FormFlags.Hidden)]
 		public string ConfigChecksum = "";
 
 		// Save Config from structure
 		public void SetConfig(Payload p)
 		{
-			ConfigText = Payload2Base64(p);
-			UpdateConfigChecksum();
+			UpdateConfigChecksum( Payload2Base64(p) );
 		}
 
 		// Load Config from a file on server's disk
@@ -535,8 +530,7 @@ namespace SparkplugB
 			if (File.Exists(FileName))
 			{
 				var chardata = File.ReadAllBytes(FileName);
-				ConfigText = Convert.ToBase64String(chardata);
-				UpdateConfigChecksum();
+				UpdateConfigChecksum(Convert.ToBase64String(chardata));
 				return true;
 			}
 			return false;
@@ -554,7 +548,7 @@ namespace SparkplugB
 			return Convert.ToBase64String(bytes);
 		}
 
-		public void UpdateConfigChecksum()
+		public void UpdateConfigChecksum( string ConfigText)
 		{
 			ConfigChecksum = Util.GetHashString(ConfigText);
 		}
@@ -573,6 +567,10 @@ namespace SparkplugB
 				if (ENodeId == "")
 				{
 					Errors.Add(this, "ENodeId", "Edge Node name must not be blank.");
+				}
+				if (ChannelId.Id <= 0)
+				{
+					Errors.Add(this, "ChannelId", "Nodes and Devices must be linked to a broker channel.");
 				}
 			}
             base.OnValidateConfig(Errors);
@@ -610,8 +608,7 @@ namespace SparkplugB
 						SparkplugScannerAlarm.Raise("SparkplugCommSeq", "SparkplugCommError: Invalid Birth/Death Sequence", Severity, true);
 					}
 				}
-				//TODO Set quality of node points to stale, but not? child device points to stale?
-
+				//TODO Set quality of node points to stale, but not child device points to stale?
 				SetDataModified(true);
 			}
 			// Recieve Birth data (configuration) for known device
@@ -653,7 +650,7 @@ namespace SparkplugB
 				}
 				string ConfigReceived = Payload2Base64(MetricsOnly);
 
-				if (ConfigReceived == ConfigText)
+				if (ValidateConfigChecksum( ConfigReceived ) )
 				{
 					LogSystemEvent("SparkplugBND", Severity, "Received configuration is the same as the saved version.");
 					writeNewConfig = false;
@@ -663,11 +660,6 @@ namespace SparkplugB
 					// New configuration received - process this !
 					LogSystemEvent("SparkplugBND", Severity, "Received configuration for updating an existing device.");
 					writeNewConfig = true;
-				}
-
-				if (writeNewConfig)
-				{
-					LogSystemEvent("SparkplugBND", Severity, "Received new configuration - writing to Field Device.");
 
 					SetConfig(MetricsOnly);
 
@@ -701,7 +693,6 @@ namespace SparkplugB
 		[Method("Reset Config Version", "Reset configuration data on this device.", OPCProperty.Base + 86)]
 		public void ResetConfig()
 		{
-			ConfigText = "";
 			ConfigChecksum = "";
 			object[] ArgObject = new Object[1];
 			ArgObject[0] = ""; // No parameters
@@ -839,9 +830,19 @@ namespace SparkplugB
 
 		public override void OnValidateConfig(MessageInfo Errors)
 		{
-			//ToDo Check topics not empty
-
-			//Errors.Add("A config error messsage.");
+			// Don't validate templated nodes/devices
+			if (!IsTemplate())
+			{
+				if (SparkplugName == "")
+				{
+					Errors.Add(this, "ENodeId", "Edge Node name must not be blank.");
+				}
+				// Not checking the alias because it is optional
+				if (ScannerId.Id <= 0)
+				{
+					Errors.Add(this, "ChannelId", "Points must be linked to a Node/Device.");
+				}
+			}
 			base.OnValidateConfig(Errors);
 		}
 	}
@@ -975,9 +976,19 @@ namespace SparkplugB
 
 		public override void OnValidateConfig(MessageInfo Errors)
 		{
-			//ToDo Check topics not empty
-
-			//Errors.Add("A config error messsage.");
+			// Don't validate templated nodes/devices
+			if (!IsTemplate())
+			{
+				if (SparkplugName == "")
+				{
+					Errors.Add(this, "ENodeId", "Edge Node name must not be blank.");
+				}
+				// Not checking the alias because it is optional
+				if (ScannerId.Id <= 0)
+				{
+					Errors.Add(this, "ChannelId", "Points must be linked to a Node/Device.");
+				}
+			}
 			base.OnValidateConfig(Errors);
 		}
 	}
@@ -1107,9 +1118,19 @@ namespace SparkplugB
 
 		public override void OnValidateConfig(MessageInfo Errors)
 		{
-			//ToDo Check topics not empty
-
-			//Errors.Add("A config error messsage.");
+			// Don't validate templated nodes/devices
+			if (!IsTemplate())
+			{
+				if (SparkplugName == "")
+				{
+					Errors.Add(this, "ENodeId", "Edge Node name must not be blank.");
+				}
+				// Not checking the alias because it is optional
+				if (ScannerId.Id <= 0)
+				{
+					Errors.Add(this, "ChannelId", "Points must be linked to a Node/Device.");
+				}
+			}
 			base.OnValidateConfig(Errors);
 		}
 	}
@@ -1239,9 +1260,19 @@ namespace SparkplugB
 
 		public override void OnValidateConfig(MessageInfo Errors)
 		{
-			//ToDo Check topics not empty
-
-			//Errors.Add("A config error messsage.");
+			// Don't validate templated nodes/devices
+			if (!IsTemplate())
+			{
+				if (SparkplugName == "")
+				{
+					Errors.Add(this, "ENodeId", "Edge Node name must not be blank.");
+				}
+				// Not checking the alias because it is optional
+				if (ScannerId.Id <= 0)
+				{
+					Errors.Add(this, "ChannelId", "Points must be linked to a Node/Device.");
+				}
+			}
 			base.OnValidateConfig(Errors);
 		}
 	}
@@ -1371,9 +1402,19 @@ namespace SparkplugB
 
 		public override void OnValidateConfig(MessageInfo Errors)
 		{
-			//ToDo Check topics not empty
-
-			//Errors.Add("A config error messsage.");
+			// Don't validate templated nodes/devices
+			if (!IsTemplate())
+			{
+				if (SparkplugName == "")
+				{
+					Errors.Add(this, "ENodeId", "Edge Node name must not be blank.");
+				}
+				// Not checking the alias because it is optional
+				if (ScannerId.Id <= 0)
+				{
+					Errors.Add(this, "ChannelId", "Points must be linked to a Node/Device.");
+				}
+			}
 			base.OnValidateConfig(Errors);
 		}
 	}

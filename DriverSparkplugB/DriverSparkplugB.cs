@@ -73,8 +73,6 @@ namespace DriverSparkplugB
         public Dictionary<string, ConfigItem> configBuf = new Dictionary<string, ConfigItem>();
 		// List of pending data items to process, received in birth but need processing later.
 		public Dictionary<string, Payload> dataBuf = new Dictionary<string, Payload>();
-		// Last known online state
-		//private bool LastKnownOnline = false;
 		// Last known connection state
 		private bool LastKnownConnect = false;
         // The MQTT client
@@ -97,6 +95,7 @@ namespace DriverSparkplugB
 
             // Clear the internal index of devices (scanners)
             DeviceIndex.Clear();
+
         }
 
         public override void OnConnect()
@@ -196,15 +195,6 @@ namespace DriverSparkplugB
 
                 SetStatus(ServerStatus.Online, "Connected");
 
-                // Alarm Clear
-                //Log("Channel doConnect(): SendReceive to Clear Alarm");
-                //App.SendReceiveObject(DBChannel.Id, SendRecClearChannelAlarm, true);
-                //if (!LastKnownOnline)
-                //{
-                //    Log("Channel doConnect(): Call SetScannersOnline");
-                //    //SetScannersOnline();
-                //    LastKnownOnline = true;
-                //}
                 return ServerStatus.Online;
             }
             else
@@ -216,61 +206,10 @@ namespace DriverSparkplugB
 
                 SetStatus(ServerStatus.Offline, "Cannot connect");
 
-                // Alarm Active
-                //Log("Channel doConnect(): SendReceive to Activate Alarm");
-                //App.SendReceiveObject(DBChannel.Id, OPCProperty.SendRecRaiseChannelAlarm, true);
-                //if (LastKnownOnline)
-                //{
-                //    Log("Channel doConnect(): Call SetScannersOffline");
-                //    //SetScannersOffline();
-                //    LastKnownOnline = false;
-                //}
                 return ServerStatus.Offline;
             }
         }
 
-#if false // Not needed.
-        private void SetScannersOffline()
-        {
-            Log("SetScannersOffline(): Start");
-
-            // set the scanners that are attached to this channel offline
-            // when the channel is failed
-            foreach (DrvCSScanner s in Scanners)
-            {
-                // Set scanner offline
-                Log("SetScannersOffline(): Setting Scanner '" + s.FullName + "' Offline");
-
-                s.SetStatus(SourceStatus.Offline);
-                s.SetFailReason("Channel is offline");
-                removeScannerFromIndex(s);
-
-                // Scanner Alarm Active - TO DO
-                //App.SendReceiveObject(s.DBScanner.Id, OPCProperty.SendRecRaiseScannerAlarm, true);
-            }
-
-            Log("SetScannersOffline(): End");
-        }
-
-        private void SetScannersOnline()
-        {
-            Log("SetScannersOnline(): Start");
-            // set the scanners that are attached to this channel offline
-            // when the channel is failed
-            foreach (DrvCSScanner s in Scanners)
-            {
-                // Set scanner online
-                Log("SetScannersOnline(): Setting Scanner '" + s.FullName + "' Online");
-
-                s.SetStatus(SourceStatus.Online);
-
-                // Scanner Alarm Active - TO DO
-                //App.SendReceiveObject(DBChannel.Id, OPCProperty.SendRecClearScannerAlarm, true);
-                addScannerToIndex(s);
-            }
-            Log("SetScannersOnline(): End");
-        }
-#endif
 
         public void AddScannerToIndex(DrvCSScanner s)
         {
@@ -607,15 +546,15 @@ namespace DriverSparkplugB
                 }
                 else
                 {
-                    // Invalid JSON for a new device
+                    // Invalid message for a new device
                     App.SendReceiveObject(this.DBChannel.Id, OPCProperty.SendRecReportConfigError, "Failed to interpret Birth message for unknown: " + NodeDeviceId + " " + e.Message);
                     return;
                 }
             }
 			LogAndEvent("Birth: " + NodeDeviceId + ", Timestamp: " + ConfigPayload.Timestamp.ToString() + " Sequence: " + ConfigPayload.Seq.ToString());
-			
-            // A device has connected
-            if (DeviceIndex.TryGetValue( NodeDeviceId, out FD))
+
+			// A device has connected - existing or new?
+			if (DeviceIndex.TryGetValue( NodeDeviceId, out FD))
             {
 				// Got the birth message for a previously known device
 
@@ -638,7 +577,14 @@ namespace DriverSparkplugB
 				if ( (string)ReplyObject == "Yes")
 				{
 					FD.LogAndEvent("Received newer configuration" );
-					HandleNewConfig(ConfigPayload, FD);
+					if (DBChannel.AutoReconfig)
+					{
+						HandleNewConfig(ConfigPayload, FD);
+					}
+					else
+					{
+						FD.LogAndEvent("Ignoring newer configuration, AutoReconfig is off.");
+					}
 				}
 				// Birth messages can contain data, so buffered the payload from the Birth message
 				// This will get picked up in the device's OnScan method.
