@@ -2234,16 +2234,16 @@ namespace DriverSparkplugB
 				case 5:
 				case 6:
 				case 7:
-					ControlMetric.IntValue = (uint)value;
+					ControlMetric.IntValue = Convert.ToUInt32(value);
 					break;
 				case 8:
-					ControlMetric.LongValue = (uint)value;
+					ControlMetric.LongValue = Convert.ToUInt32(value);
 					break;
 				case 9:
-					ControlMetric.FloatValue = (float)value;
+					ControlMetric.FloatValue = Convert.ToSingle(value);
 					break;
 				case 10:
-					ControlMetric.DoubleValue = (double)value;
+					ControlMetric.DoubleValue = Convert.ToDouble(value);
 					break;
 				case 11:
 					int intvalue = (byte)value;
@@ -2251,16 +2251,16 @@ namespace DriverSparkplugB
 					break;
 				case 12:
 				case 15:
-					ControlMetric.StringValue = (string)value;
+					ControlMetric.StringValue = Convert.ToString(value);
 					break;
 				case 13:
-					ControlMetric.LongValue = (ulong)((DateTime)value - DateTime.Parse("01/Jan/1970")).Milliseconds;
+					ControlMetric.LongValue = Convert.ToUInt64(((DateTime)value - DateTime.Parse("01/Jan/1970")).Milliseconds);
 					break;
 				default:
 					LogAndEvent("Unknown control type");
 					return;
 			}
-			
+
 			ControlMetric.Datatype = SPtype;
 			ControlMessage.Metrics.Add(ControlMetric);
 
