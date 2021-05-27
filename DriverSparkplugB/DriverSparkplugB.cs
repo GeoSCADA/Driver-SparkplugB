@@ -2199,8 +2199,9 @@ namespace DriverSparkplugB
             SparkplugBPointDg point = (SparkplugBPointDg)(entry.DatabaseObject);
 			uint SPtype = (uint)((SparkplugBPointDg)entry.DatabaseObject).SPtype;
 			string SPname = ((SparkplugBPointDg)entry.DatabaseObject).SparkplugName;
+			ulong Alias = (ulong)((SparkplugBPointDg)entry.DatabaseObject).Address;
 
-			SendControlMessage(val, SPtype, SPname, QoS);
+			SendControlMessage(val, SPtype, SPname, Alias, QoS);
 		}
 
 		private void ControlAnalogue(PointSourceEntry entry, object val, byte QoS)
@@ -2208,11 +2209,12 @@ namespace DriverSparkplugB
 			SparkplugBPointAg point = (SparkplugBPointAg)(entry.DatabaseObject);
 			uint SPtype = (uint)((SparkplugBPointAg)entry.DatabaseObject).SPtype;
 			string SPname = ((SparkplugBPointAg)entry.DatabaseObject).SparkplugName;
+			ulong Alias = (ulong)((SparkplugBPointAg)entry.DatabaseObject).Address;
 
-			SendControlMessage(val, SPtype, SPname, QoS);
+			SendControlMessage(val, SPtype, SPname, Alias, QoS);
 		}
 
-		private void SendControlMessage(Object value, uint SPtype, string SPname, byte PubQoS)
+		private void SendControlMessage(Object value, uint SPtype, string SPname, ulong Alias, byte PubQoS)
 		{
 			// Build control message
 			Payload ControlMessage = new Payload();
@@ -2223,6 +2225,7 @@ namespace DriverSparkplugB
 			// Metric
 			Payload.Types.Metric ControlMetric = new Payload.Types.Metric();
 			ControlMetric.Name = SPname;
+			ControlMetric.Alias = Alias;
 			ControlMetric.Timestamp = ControlMessage.Timestamp;
 			// Get value based on type of control value
 			switch (SPtype)
