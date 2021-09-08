@@ -292,41 +292,52 @@ namespace DriverSparkplugB
                 }
                 else
                 {
-                    X509Certificate caCert;
-                    X509Certificate clientCert;
-                    try
-                    {
-                        caCert = new X509Certificate(c.caCertFile);
-                    }
-                    catch (Exception e)
-                    {
-                        LogAndEvent("Error reading or creating certificate from CA Certificate file: " + e.Message);
-                        throw e;
-                    }
-                    try
-                    {
-						if (c.clientCertFormat == 0) // DER
+					if (c.caCertFile == "")
+					{
+						client = new MqttClient(c.hostname, c.portnumber, true, (MqttSslProtocols)c.security, null, null);
+					}
+					else
+					{
+						X509Certificate caCert;
+						X509Certificate clientCert;
+						try
 						{
-							clientCert = new X509Certificate(c.clientCertFile);
+							caCert = new X509Certificate(c.caCertFile);
 						}
-						else if (c.clientCertFormat == 1) // PFX
+						catch (Exception e)
 						{
-							clientCert = new X509Certificate2(c.clientCertFile, c.clientCertPassword);
+							LogAndEvent("Error reading or creating certificate from CA Certificate file: " + e.Message);
+							throw e;
 						}
-						else
-                        {
-							LogAndEvent("Cert format not supported");
-							throw new Exception("Cert format not supported");
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        LogAndEvent("Error reading or creating certificate from Client Certificate file: " + e.Message);
-                        throw e;
-                    }
-                    client = new MqttClient(c.hostname, c.portnumber, true, caCert, clientCert, (MqttSslProtocols)c.security);
-                }
-
+						try
+						{
+							if (c.clientCertFile == null)
+							{
+								if (c.clientCertFormat == 0) // DER
+								{
+									clientCert = new X509Certificate(c.clientCertFile);
+								}
+								else if (c.clientCertFormat == 1) // PFX
+								{
+									clientCert = new X509Certificate2(c.clientCertFile, c.clientCertPassword);
+								}
+								else
+								{
+									LogAndEvent("Cert format not supported");
+									throw new Exception("Cert format not supported");
+								}
+							}
+							else
+								clientCert = null;
+						}
+						catch (Exception e)
+						{
+							LogAndEvent("Error reading or creating certificate from Client Certificate file: " + e.Message);
+							throw e;
+						}
+						client = new MqttClient(c.hostname, c.portnumber, true, caCert, clientCert, (MqttSslProtocols)c.security);
+					}
+				}
                 if (c.version == 0)
                 {
 					LogAndEvent("Protocol version 3.1");
