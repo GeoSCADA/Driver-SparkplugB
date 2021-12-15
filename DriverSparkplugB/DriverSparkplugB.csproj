@@ -78,13 +78,13 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ClearScada.Client, Version=6.83.7417.1, Culture=neutral, PublicKeyToken=9e16b9dd55e2cd53, processorArchitecture=MSIL">
+    <Reference Include="ClearScada.Client, Version=6.84.7731.1, Culture=neutral, PublicKeyToken=9e16b9dd55e2cd53, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\ClearSCADA\Binaries\X64\Release\ClearScada.Client.dll</HintPath>
+      <HintPath>c:\Program Files\Schneider Electric\ClearSCADA\ClearScada.Client.dll</HintPath>
     </Reference>
     <Reference Include="ControlMicrosystems.ClearSCADA.DDK, Version=6.83.7417.1, Culture=neutral, PublicKeyToken=9e16b9dd55e2cd53, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\ClearSCADA\Binaries\X64\Release\ControlMicrosystems.ClearSCADA.DDK.dll</HintPath>
+      <HintPath>C:\Program Files\Schneider Electric\ClearSCADA\ControlMicrosystems.ClearSCADA.DDK.dll</HintPath>
     </Reference>
     <Reference Include="Google.Protobuf, Version=3.12.2.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
       <HintPath>..\packages\Google.Protobuf.3.12.2\lib\net45\Google.Protobuf.dll</HintPath>
@@ -93,6 +93,9 @@
     <Reference Include="M2Mqtt.Net, Version=4.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\M2Mqtt.4.3.0.0\lib\net45\M2Mqtt.Net.dll</HintPath>
       <Private>True</Private>
+    </Reference>
+    <Reference Include="SparkplugB">
+      <HintPath>..\SparkplugB\bin\x64\Debug\SparkplugB.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
@@ -110,10 +113,6 @@
     </Reference>
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml" />
-    <Reference Include="SparkplugB, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\SparkplugB\bin\x64\Debug\SparkplugB.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DriverSparkplugB.cs" />
@@ -142,23 +141,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy $(TargetDir)\SparkplugB.dll C:\Dev\ClearSCADA\Binaries\X64\Debug\
-copy $(TargetDir)\SparkplugB.dll C:\Dev\ClearSCADA\Binaries\X64\Release\
-
-copy $(TargetDir)\SparkplugB.PDB C:\Dev\ClearSCADA\Binaries\X64\Debug\
-copy $(TargetDir)\SparkplugB.PDB C:\Dev\ClearSCADA\Binaries\X64\Release\
-
-copy $(TargetDir)\M2Mqtt.Net.dll C:\Dev\ClearSCADA\Binaries\X64\Debug\
-copy $(TargetDir)\M2Mqtt.Net.dll C:\Dev\ClearSCADA\Binaries\X64\Release\
-
-copy $(TargetDir)\Google.Protobuf.dll C:\Dev\ClearSCADA\Binaries\X64\Debug\
-copy $(TargetDir)\Google.Protobuf.dll C:\Dev\ClearSCADA\Binaries\X64\Release\
-
-copy $(TargetPath) C:\Dev\ClearSCADA\Binaries\X64\Debug\
-copy $(TargetPath) C:\Dev\ClearSCADA\Binaries\X64\Release\
-
-copy $(TargetDir)\DriverSparkplugB.PDB C:\Dev\ClearSCADA\Binaries\X64\Debug\
-copy $(TargetDir)\DriverSparkplugB.PDB C:\Dev\ClearSCADA\Binaries\X64\Release\
+    <PostBuildEvent>copy $(TargetDir)\SparkplugB.dll "C:\Program Files\Schneider Electric\ClearSCADA\"
+copy $(TargetDir)\SparkplugB.PDB "C:\Program Files\Schneider Electric\ClearSCADA\"
+copy $(TargetDir)\M2Mqtt.Net.dll "C:\Program Files\Schneider Electric\ClearSCADA\"
+copy $(TargetDir)\Google.Protobuf.dll "C:\Program Files\Schneider Electric\ClearSCADA\"
+copy $(TargetPath) "C:\Program Files\Schneider Electric\ClearSCADA\"
+copy $(TargetDir)\DriverSparkplugB.PDB "C:\Program Files\Schneider Electric\ClearSCADA\"
 </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

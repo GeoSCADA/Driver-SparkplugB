@@ -16,7 +16,6 @@ using Org.Eclipse.Tahu.Protobuf;
 namespace DriverSparkplugB
 {
 
-
     class DriverSparkplugB
 	{
 		static void Main(string[] args)
@@ -87,7 +86,7 @@ namespace DriverSparkplugB
 			base.OnConnect();
 
 			// Make a broker connection
-			ServerStatus ss = doConnect();
+			ServerStatus ss = DoConnect();
             if (ss == ServerStatus.Offline)
             {
                 LogAndEvent("Failed to connect.");
@@ -146,13 +145,30 @@ namespace DriverSparkplugB
 
 
         // Called on (re)connection.
-        private ServerStatus doConnect()
+        private ServerStatus DoConnect()
         {
             Log("Channel doConnect(): Call Conn...");
             string errorText;
-            bool s = connectTo((string)DBChannel.BrokerHost, DBChannel.BrokerPort, DBChannel.Username, DBChannel.Password, 
-                                DBChannel.MQTTVersion, DBChannel.ClientId, DBChannel.Security, 
-                                DBChannel.caCertFile, DBChannel.clientCertFile, out errorText);
+
+			ConnectivityOptions ConnOptions = new ConnectivityOptions
+			{
+				hostname = (string)DBChannel.BrokerHost,
+				portnumber = DBChannel.BrokerPort,
+				username = DBChannel.Username,
+				password = DBChannel.Password,
+				version = DBChannel.MQTTVersion,
+				clientId = DBChannel.ClientId,
+				security = DBChannel.Security,
+				caCertFile = DBChannel.caCertFile,
+				clientCertFile = DBChannel.clientCertFile,
+				clientCertFormat = DBChannel.ClientCertFormat,
+				clientCertPassword = DBChannel.ClientCertPassword,
+				CleanConnect = DBChannel.CleanConnect,
+				SubQoS = DBChannel.SubQoS,
+				PubQoS = DBChannel.PubQoS
+			};
+
+            bool s = ConnectTo(ConnOptions, out errorText);
 
             Log("Channel doConnect(): Call CheckIfBrokerIsActive...");
             // Check Broker's active status
@@ -238,7 +254,7 @@ namespace DriverSparkplugB
         }
 #endif
 
-        public void addScannerToIndex(DrvCSScanner s)
+        public void AddScannerToIndex(DrvCSScanner s)
         {
             // Check if channel already contains scanner before adding
             if (DeviceIndex.ContainsKey((string)s.DBScanner.NodeDevice) == false)
@@ -252,7 +268,7 @@ namespace DriverSparkplugB
             }
         }
 
-        public void removeScannerFromIndex(DrvCSScanner s)
+        public void RemoveScannerFromIndex(DrvCSScanner s)
         {
             if (DeviceIndex.ContainsKey((string)s.DBScanner.NodeDevice) == true)
             {
@@ -265,47 +281,69 @@ namespace DriverSparkplugB
             }
         }
 
-        private bool connectTo(string hostname, UInt16 portnumber, string username, string password, 
-                                byte version, string clientId, byte security, string caCertFile, string clientCertFile, out string errorText)
+        private bool ConnectTo(ConnectivityOptions c, out string errorText)
         {
             try
             {
                 // create client instance
-                if (security == 0)
+                if (c.security == 0)
                 {
-                    client = new MqttClient(hostname, portnumber, false, MqttSslProtocols.None, null, null);
+                    client = new MqttClient(c.hostname, c.portnumber, false, MqttSslProtocols.None, null, null);
                 }
                 else
                 {
-                    X509Certificate caCert;
-                    X509Certificate clientCert;
-                    try
-                    {
-                        caCert = new X509Certificate(caCertFile);
-                    }
-                    catch (Exception e)
-                    {
-                        LogAndEvent("Error reading or creating certificate from CA Certificate file: " + e.Message);
-                        throw e;
-                    }
-                    try
-                    {
-                        clientCert = new X509Certificate(clientCertFile);
-                    }
-                    catch (Exception e)
-                    {
-                        LogAndEvent("Error reading or creating certificate from Client Certificate file: " + e.Message);
-                        throw e;
-                    }
-                    client = new MqttClient(hostname, portnumber, true, caCert, clientCert, (MqttSslProtocols)security);
-                }
-
-                if (version == 0)
+					if (c.caCertFile == "")
+					{
+						client = new MqttClient(c.hostname, c.portnumber, true, (MqttSslProtocols)c.security, null, null);
+					}
+					else
+					{
+						X509Certificate caCert;
+						X509Certificate clientCert;
+						try
+						{
+							caCert = new X509Certificate(c.caCertFile);
+						}
+						catch (Exception e)
+						{
+							LogAndEvent("Error reading or creating certificate from CA Certificate file: " + e.Message);
+							throw e;
+						}
+						try
+						{
+							if (c.clientCertFile == null)
+							{
+								if (c.clientCertFormat == 0) // DER
+								{
+									clientCert = new X509Certificate(c.clientCertFile);
+								}
+								else if (c.clientCertFormat == 1) // PFX
+								{
+									clientCert = new X509Certificate2(c.clientCertFile, c.clientCertPassword);
+								}
+								else
+								{
+									LogAndEvent("Cert format not supported");
+									throw new Exception("Cert format not supported");
+								}
+							}
+							else
+								clientCert = null;
+						}
+						catch (Exception e)
+						{
+							LogAndEvent("Error reading or creating certificate from Client Certificate file: " + e.Message);
+							throw e;
+						}
+						client = new MqttClient(c.hostname, c.portnumber, true, caCert, clientCert, (MqttSslProtocols)c.security);
+					}
+				}
+                if (c.version == 0)
                 {
 					LogAndEvent("Protocol version 3.1");
                     client.ProtocolVersion = MqttProtocolVersion.Version_3_1;
                 }
-                else if (version == 1)
+                else if (c.version == 1)
                 {
 					LogAndEvent("Protocol version 3.1.1");
                     client.ProtocolVersion = MqttProtocolVersion.Version_3_1_1;
@@ -322,8 +360,8 @@ namespace DriverSparkplugB
                 return false;
             }
             // register to message received 
-            client.MqttMsgPublishReceived += client_MqttMsgPublishReceived;
-            client.ConnectionClosed += client_MqttConnectionClosed;
+            client.MqttMsgPublishReceived += Client_MqttMsgPublishReceived;
+            client.ConnectionClosed += Client_MqttConnectionClosed;
 
 			// Death certificate
 			string StateTopic = "STATE/" + DBChannel.SCADAHostId;
@@ -333,15 +371,16 @@ namespace DriverSparkplugB
 			//string clientId = Guid.NewGuid().ToString();
 			try
             {
-                if (username == null || username == "")
+				// Note AWS doesn't support retain, so use CleanConnect
+                if (c.username == null || c.username == "")
                 {
                     // create client instance 
-                    client.Connect(clientId, "", "", true, 1, true, StateTopic, DeathPayload, false, 60);
+                    client.Connect(c.clientId, "", "", !c.CleanConnect, 1, true, StateTopic, DeathPayload, c.CleanConnect, 60);
                 }
                 else
                 {
                     // create client instance with login.
-                    client.Connect(clientId, username, password, true, 1, true, StateTopic, DeathPayload, false, 60);
+                    client.Connect(c.clientId, c.username, c.password, !c.CleanConnect, 1, true, StateTopic, DeathPayload, c.CleanConnect, 60);
                 }
             }
             catch (Exception Fault)
@@ -355,33 +394,43 @@ namespace DriverSparkplugB
 			// Send birth certificate
 			string BirthPayload = "ONLINE";
 			byte[] BirthPayloadBytes = Encoding.ASCII.GetBytes( BirthPayload);
-			doPublish(StateTopic, BirthPayloadBytes, 1, true);
+			DoPublish(StateTopic, BirthPayloadBytes, c.PubQoS, true);
 
 			// subscribe to the topic (namespace / group) with wildcard and QoS 2 MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE
 			// Can we do this to the local broker to ensure safe delivery?
 			string topic = this.DBChannel.NamespaceName + "/" + this.DBChannel.GroupId + "/#";
-            ushort s = client.Subscribe(new string[] { topic }, new byte[] { 2 });
-            LogAndEvent("Subscribed to: " + topic);
+            ushort s = client.Subscribe(new string[] { topic }, new byte[] { c.SubQoS });
+            LogAndEvent("Subscribed to: " + topic + " - with QoS: " + c.SubQoS.ToString());
             errorText = "";
 
             return true;
         }
 
-		public bool doPublish( string topic, byte [] message, byte qosLevel, bool retain)
+		public bool DoPublish( string topic, byte [] message, byte qosLevel, bool retain)
 		{
-			ushort p = client.Publish(topic, message, qosLevel, retain);
+
+			if (!DBChannel.CleanConnect)
+			{
+				client.Publish(topic, message, qosLevel, retain);
+			}
+			else
+            {
+				client.Publish(topic, message, qosLevel, false); // For AWS that doesn't support retained flag currently
+			}
+
 			LogAndEvent("Published to: " + topic + " size: " + message.Length.ToString());
 			return true;
 		}
 
-        private void client_MqttConnectionClosed(object sender, System.EventArgs e)
+        private void Client_MqttConnectionClosed(object sender, System.EventArgs e)
         {
             this.SetFailReason("Connection Closed: " + e.ToString());
             LogAndEvent("MQTT Connection closed.");
-        }
+			SetStatus(ServerStatus.Failed, e.ToString());
+		}
 
         // 
-        private void client_MqttMsgPublishReceived(object sender, uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublishEventArgs e)
+        private void Client_MqttMsgPublishReceived(object sender, uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublishEventArgs e)
         {
             // handle message received 
             string t = e.Topic;
@@ -392,7 +441,7 @@ namespace DriverSparkplugB
 
 			// Find the point entry with this topic
 			string Namespace = "", GroupId = "", Command = "", Node = "", Device = "";
-            decodeTopic( t, ref Namespace, ref GroupId, ref Command, ref Node, ref Device);
+            DecodeTopic( t, ref Namespace, ref GroupId, ref Command, ref Node, ref Device);
 
 			// Checks
 			if (Namespace != DBChannel.NamespaceName)
@@ -447,7 +496,7 @@ namespace DriverSparkplugB
 		// namespace/group_id/DDEATH/edge_node_id/device_id
 
 		// Result[0] is namespace, Result[1] is groupid, Result[2] is command, Result[3] is Node, Result[4] is device
-		private bool decodeTopic( string Topic, ref string Namespace, ref string GroupId, ref string Command, ref string Node, ref string Device)
+		private bool DecodeTopic( string Topic, ref string Namespace, ref string GroupId, ref string Command, ref string Node, ref string Device)
         {
             string[] t = Topic.Split('/');
 			if (t.Length >= 4)
@@ -528,6 +577,14 @@ namespace DriverSparkplugB
         {
             Log("ProcessInStatus");
             DrvCSScanner FD;
+
+			// To debug the payload content
+			//Console.Write("Payload: ");
+			//foreach ( byte b in data)
+			//{
+			//	Console.Write(b.ToString() + " ");
+			//}
+			//Console.WriteLine();
 
 			// Interpret ProtoBuf
 			Payload ConfigPayload;
@@ -655,7 +712,7 @@ namespace DriverSparkplugB
                     App.SendReceiveObject(this.DBChannel.Id, OPCProperty.SendRecRequestConfiguration, NodeDeviceId);
                 }
                 // Update servers list of items waiting for config.
-                refreshPendingQueue();
+                RefreshPendingQueue();
             }
         }
 
@@ -758,13 +815,13 @@ namespace DriverSparkplugB
 			// Need to connect to the database as a client
 			ClearScada.Client.Simple.Connection connection;
 			ClearScada.Client.Advanced.IServer AdvConnection;
-			if (!connect2Net(DBChannel.ConfigUserName, DBChannel.ConfigPass, out connection, out AdvConnection))
+			if (!Connect2Net(DBChannel.ConfigUserName, DBChannel.ConfigPass, out connection, out AdvConnection))
 			{
 				ErrorText = ("Driver cannot connect client to server.");
 				return false;
 			}
 
-			ClearScada.Client.Simple.DBObject FieldDevice = null;
+			ClearScada.Client.Simple.DBObject FieldDevice;
 			try
 			{
 				ObjectId FieldENodeId = new ObjectId(unchecked((int)FD.DBScanner.Id));
@@ -775,10 +832,8 @@ namespace DriverSparkplugB
 				ErrorText = "Cannot find device from its Id? " + Fail.Message;
 				return false;
 			}
-
 			// Get parent group
-			ClearScada.Client.Simple.DBObject ParentGroup = null;
-			ParentGroup = FieldDevice.Parent; // this variable is 'Instance' in CreateFieldDevice()
+			ClearScada.Client.Simple.DBObject ParentGroup = FieldDevice.Parent;
 
 			// Call function to do this all, starting with the UUID
 			Log("Reconfigure Device And Children");
@@ -790,7 +845,7 @@ namespace DriverSparkplugB
 			// Need to connect to the database as a client
 			ClearScada.Client.Simple.Connection connection;
 			ClearScada.Client.Advanced.IServer AdvConnection;
-			if (!connect2Net(DBChannel.ConfigUserName, DBChannel.ConfigPass, out connection, out AdvConnection))
+			if (!Connect2Net(DBChannel.ConfigUserName, DBChannel.ConfigPass, out connection, out AdvConnection))
 			{
 				ErrorText = ("Driver cannot connect client to server.");
 				return false;
@@ -805,7 +860,7 @@ namespace DriverSparkplugB
 
 			bool status =  CreateFieldDeviceObjects(NodeDeviceId, thisItem.birthData, connection, AdvConnection, out ErrorText);
 			// Should disconnect everywhere it goes wrong too!!
-			disconnectNet(connection, AdvConnection);
+			DisconnectNet(connection, AdvConnection);
 
 			// There may be data in the metrics, so buffer this for processing after device creation
 			// (OnDefine needs to have been called).
@@ -819,7 +874,7 @@ namespace DriverSparkplugB
 			// Finish by remove 
 			configBuf.Remove(NodeDeviceId);
 			LogAndEvent("Removed from config buffer");
-			refreshPendingQueue();
+			RefreshPendingQueue();
 			LogAndEvent("Config buffer refreshed.");
 
 			return status;
@@ -1110,8 +1165,7 @@ namespace DriverSparkplugB
 			// Creating Field Device etc.
 
 			// Set field device properties
-			// Start with node and device. Checkset returns false if failed, 
-			// but we will ignore some failures as the property may be already set appropriately in the template
+			// ChannelId - ignore if set already - may be already set appropriately in the template
 
 			if (! CheckSet( FieldDevice, "ENodeId", NodeId))
 			{
@@ -1119,8 +1173,26 @@ namespace DriverSparkplugB
 				return false;
 			}
 
-			CheckSet( FieldDevice, "DeviceId", DeviceId);
-			CheckSet( FieldDevice, "ChannelId", this.DBChannel.Id);
+			if (FieldDevice.Id.ToInt32() == (Int32)this.DBChannel.Id)
+			{
+				LogAndEvent("Field Device has correct channel.");
+			}
+			else
+			{
+				if (!CheckSet(FieldDevice, "ChannelId", this.DBChannel.Id))
+				{
+					ErrorText = "Error writing device ChannelId.";
+					return false;
+				}
+			}
+
+			// DeviceId. Checkset returns false if failed, 
+			if (!CheckSet(FieldDevice, "DeviceId", DeviceId))
+			{
+				ErrorText = "Error writing device DeviceId.";
+				return false;
+			}
+
 
 			// Parent Node if this is a device
 			if (DeviceId != "")
@@ -1668,7 +1740,7 @@ namespace DriverSparkplugB
 			return name.Replace('.', '_').Replace('+', '-').Replace('=', '_').Replace('#', '_').Replace('<', '_').Replace('>', '_').Replace('|', '_').Replace('@', '_').Replace(':', '_').Replace(';', '_');
 		}
 
-		public void refreshPendingQueue()
+		public void RefreshPendingQueue()
         {
             // Build a string array of uuid and device information
             string [] pendingQueue = new string[configBuf.Count];
@@ -1681,7 +1753,7 @@ namespace DriverSparkplugB
             App.SendReceiveObject(DBChannel.Id, OPCProperty.SendRecUpdateConfigQueue, pendingQueue);
         }
 
-        public bool connect2Net(string user, string password, out ClearScada.Client.Simple.Connection connection, out ClearScada.Client.Advanced.IServer AdvConnection)
+        public bool Connect2Net(string user, string password, out ClearScada.Client.Simple.Connection connection, out ClearScada.Client.Advanced.IServer AdvConnection)
         {
             var node = new ClearScada.Client.ServerNode(ClearScada.Client.ConnectionType.Standard, "127.0.0.1", 5481);
             connection = new ClearScada.Client.Simple.Connection("SparkplugB");
@@ -1734,7 +1806,7 @@ namespace DriverSparkplugB
             }
         }
 
-        public bool disconnectNet( ClearScada.Client.Simple.Connection connection,  ClearScada.Client.Advanced.IServer AdvConnection)
+        public bool DisconnectNet( ClearScada.Client.Simple.Connection connection,  ClearScada.Client.Advanced.IServer AdvConnection)
         {
             try
             {
@@ -1779,7 +1851,7 @@ namespace DriverSparkplugB
 
 			LogAndEvent("Scanner defined");
 
-            ((DrvSparkplugBBroker)Channel).addScannerToIndex(this);
+            ((DrvSparkplugBBroker)Channel).AddScannerToIndex(this);
 
 			// Attempt to process data from queue here
 			// Unusual, as being done before setting source status online
@@ -1842,7 +1914,7 @@ namespace DriverSparkplugB
 
 		public override void OnUnDefine()
         {
-            ((DrvSparkplugBBroker)Channel).removeScannerFromIndex(this);
+            ((DrvSparkplugBBroker)Channel).RemoveScannerFromIndex(this);
             base.OnUnDefine();
         }
 
@@ -2116,13 +2188,16 @@ namespace DriverSparkplugB
 
 		public override void OnControl(PointSourceEntry Point, object Value)
         {
-            if (Point.PointType.Name == "SparkplugBPointDg") // Entry.PointType == typeof(SparkplugBPointDg)
+			DrvSparkplugBBroker broker = (DrvSparkplugBBroker)Channel;
+			byte QoS = broker.DBChannel.PubQoS;
+
+			if (Point.PointType.Name == "SparkplugBPointDg") // Entry.PointType == typeof(SparkplugBPointDg)
 			{
-                ControlDigital(Point, Value);
+                ControlDigital(Point, Value, QoS);
             }
             else if (Point.PointType.Name == "SparkplugBPointAg") // Entry.PointType == typeof(SparkplugBPointAg)
 			{
-                ControlAnalogue(Point, Value);
+                ControlAnalogue(Point, Value, QoS);
             }
 			else
 			{
@@ -2130,27 +2205,27 @@ namespace DriverSparkplugB
             }
         }
 
-        private void ControlDigital(PointSourceEntry entry, object val)
+        private void ControlDigital(PointSourceEntry entry, object val, byte QoS)
         {
             SparkplugBPointDg point = (SparkplugBPointDg)(entry.DatabaseObject);
 			uint SPtype = (uint)((SparkplugBPointDg)entry.DatabaseObject).SPtype;
 			string SPname = ((SparkplugBPointDg)entry.DatabaseObject).SparkplugName;
+			ulong Alias = (ulong)((SparkplugBPointDg)entry.DatabaseObject).Address;
 
-			SendControlMessage(val, SPtype, SPname);
-
+			SendControlMessage(val, SPtype, SPname, Alias, QoS);
 		}
 
-
-		private void ControlAnalogue(PointSourceEntry entry, object val)
+		private void ControlAnalogue(PointSourceEntry entry, object val, byte QoS)
 		{
 			SparkplugBPointAg point = (SparkplugBPointAg)(entry.DatabaseObject);
 			uint SPtype = (uint)((SparkplugBPointAg)entry.DatabaseObject).SPtype;
 			string SPname = ((SparkplugBPointAg)entry.DatabaseObject).SparkplugName;
+			ulong Alias = (ulong)((SparkplugBPointAg)entry.DatabaseObject).Address;
 
-			SendControlMessage(val, SPtype, SPname);
-
+			SendControlMessage(val, SPtype, SPname, Alias, QoS);
 		}
-		private void SendControlMessage(Object value, uint SPtype, string SPname)
+
+		private void SendControlMessage(Object value, uint SPtype, string SPname, ulong Alias, byte PubQoS)
 		{
 			// Build control message
 			Payload ControlMessage = new Payload();
@@ -2161,6 +2236,7 @@ namespace DriverSparkplugB
 			// Metric
 			Payload.Types.Metric ControlMetric = new Payload.Types.Metric();
 			ControlMetric.Name = SPname;
+			ControlMetric.Alias = Alias;
 			ControlMetric.Timestamp = ControlMessage.Timestamp;
 			// Get value based on type of control value
 			switch (SPtype)
@@ -2172,16 +2248,16 @@ namespace DriverSparkplugB
 				case 5:
 				case 6:
 				case 7:
-					ControlMetric.IntValue = (uint)value;
+					ControlMetric.IntValue = Convert.ToUInt32(value);
 					break;
 				case 8:
-					ControlMetric.LongValue = (uint)value;
+					ControlMetric.LongValue = Convert.ToUInt32(value);
 					break;
 				case 9:
-					ControlMetric.FloatValue = (float)value;
+					ControlMetric.FloatValue = Convert.ToSingle(value);
 					break;
 				case 10:
-					ControlMetric.DoubleValue = (double)value;
+					ControlMetric.DoubleValue = Convert.ToDouble(value);
 					break;
 				case 11:
 					int intvalue = (byte)value;
@@ -2189,16 +2265,15 @@ namespace DriverSparkplugB
 					break;
 				case 12:
 				case 15:
-					ControlMetric.StringValue = (string)value;
+					ControlMetric.StringValue = Convert.ToString(value);
 					break;
 				case 13:
-					ControlMetric.LongValue = (ulong)((DateTime)value - DateTime.Parse("01/Jan/1970")).Milliseconds;
+					ControlMetric.LongValue = Convert.ToUInt64(((DateTime)value - DateTime.Parse("01/Jan/1970")).Milliseconds);
 					break;
 				default:
 					LogAndEvent("Unknown control type");
 					return;
 			}
-			
 
 			ControlMetric.Datatype = SPtype;
 			ControlMessage.Metrics.Add(ControlMetric);
@@ -2225,11 +2300,28 @@ namespace DriverSparkplugB
 			ControlMessage.Seq = (ulong)tx_seq;
 
 			bytes = ControlMessage.ToByteArray();
-			broker.doPublish( TopicName , bytes, 1, false);
+			broker.DoPublish( TopicName , bytes, PubQoS, false);
 			// QoS=1, no retain
 
 			tx_seq++;
 		}
+	}
 
+	class ConnectivityOptions
+	{
+		public string hostname;
+		public UInt16 portnumber;
+		public string username;
+		public string password;
+		public byte version;
+		public string clientId;
+		public byte security;
+		public string caCertFile;
+		public string clientCertFile;
+		public byte clientCertFormat;
+		public string clientCertPassword;
+		public bool CleanConnect;
+		public byte SubQoS;
+		public byte PubQoS;
 	}
 }

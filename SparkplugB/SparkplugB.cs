@@ -167,12 +167,49 @@ namespace SparkplugB
 
         [Label("X509 Certificates in DER format.", 8, 5)]
 
+		[Label("Client Cert Format", 9, 3)]
+		[ConfigField("ClientCertFormat",
+						"The certificate format for the client certificate.",
+						9, 4, OPCProperty.Base + 201)]
+		[Enum(new String[] { "DER", "PFX / PKCS12" })]
+		public Byte ClientCertFormat = 0;
+
+		[Label("Client Certificate Password", 10, 3)]
+		[ConfigField("ClientCertPassword",
+					 "Password for the client certificate.",
+					 10, 4, OPCProperty.Base + 202, Length = 80, Flags = FormFlags.Password)]
+		[Enable("ClientCertFormat = 1")]
+		public string ClientCertPassword = "";
+
 		[Label("SCADA Host Id", 9, 1)]
 		[ConfigField("SCADAHostId",
 					 "SCADA Host identification for online/offline state management by Sparkplug.",
 					 9, 2, OPCProperty.Base + 15, Length = 80)]
 		public string SCADAHostId = "HostA";
 
+		// AWS doesn't support retain
+		[Label("Disable retain flag/force clean connection", 11, 3)]
+		[ConfigField("CleanConnect",
+					 "Do not set retain flag on connect, and each new connection to broker is marked as clean.",
+					 11, 4, OPCProperty.Base + 203)]
+		public bool CleanConnect;
+
+		// AWS does not support 2, will insta-disconnect if you try
+		[Label("Subscribe QoS", 12, 3)]
+		[ConfigField("SubQoS",
+				"The QoS to use for subscribing.",
+				12, 4, OPCProperty.Base + 204)]
+		[Enum(new String[] { "0", "1", "2" })]
+		public Byte SubQoS = 2;
+
+		[Label("Publish QoS", 13, 3)]
+		[ConfigField("PubQoS",
+				"The QoS to use for publishing.",
+				13, 4, OPCProperty.Base + 205)]
+		[Enum(new String[] { "0", "1", "2" })]
+		public Byte PubQoS = 1;
+
+		#region AutoConfig
 		[Label("Automatic Configure", 10, 1)]
         [ConfigField("AutoConfig",
                      "Automatically configure unknown devices.",
@@ -215,7 +252,9 @@ namespace SparkplugB
                      "Group in which Device templates are found (optional).",
                      16, 2, OPCProperty.Base + 73, RefTables = "CGroup")]
         public Reference<DBObject> DeviceTemplatesId;
+        #endregion
 
+        #region DataFields
         // To be maintained as a database item. This is an array, so can be understood by ViewX
         [DataField("ConfigBuf", "Buffer of pending device configuration", OPCProperty.Base + 9)]
         public string[] ConfigBuf = new string[0];
@@ -244,8 +283,7 @@ namespace SparkplugB
                 }
             }
         }
-
-
+        #endregion
 
         public override void OnValidateConfig(MessageInfo Errors)
         {
@@ -505,10 +543,14 @@ namespace SparkplugB
 
 		public override void OnValidateConfig(MessageInfo Errors)
         {
-			// ToDo - e.g. check ENodeId and DeviceId do not contain /, + or #
-			if (ENodeId == "")
+			// Don't validate templated nodes/devices
+			if (!IsTemplate())
 			{
-				Errors.Add(this, "ENodeId", "Edge Node name must not be blank.");
+				// ToDo - e.g. check ENodeId and DeviceId do not contain /, + or #
+				if (ENodeId == "")
+				{
+					Errors.Add(this, "ENodeId", "Edge Node name must not be blank.");
+				}
 			}
             base.OnValidateConfig(Errors);
         }
@@ -576,7 +618,7 @@ namespace SparkplugB
 				// Receive configuration for known device
 
 				// Flag to assume we write a new config, unless can't
-				bool writeNewConfig = true;
+				bool writeNewConfig;
 
                 LogSystemEvent("SparkplugBND", Severity, "Received Device Configuration." );
 				

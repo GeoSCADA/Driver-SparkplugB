@@ -13,9 +13,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCopyright("Copyright Schneider Electric")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: AssemblySupportLink("http://www.clearscada.com/services-support/get-support-now/")]
+[assembly: AssemblySupportLink("https://community.exchange.se.com/t5/Geo-SCADA-Expert-Forum/bd-p/ecostruxure-geo-scada-expert-forum")]
 [assembly: AssemblyHelpLink("")]
-[assembly: AssemblyUpdateInformation("http://www.clearscada.com/services-support/software-updates/")]
+[assembly: AssemblyUpdateInformation("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 
