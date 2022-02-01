@@ -732,6 +732,9 @@ namespace DriverSparkplugB
 				catch (Exception e)
 				{
 					FD.LogAndEvent("Error interpreting Data Payload. " + e.Message);
+					if (e.InnerException != null)
+						FD.LogAndEvent("Inner Exception:" + e.InnerException.Message);
+					
 					App.SendReceiveObject(FD.DBScanner.Id, OPCProperty.SendRecFDProtocolError, "Error interpreting Data message for: " + NodeDeviceId);
 					FD.LogAndEvent("Completed end receive error interpreting data. ");
 					return;
