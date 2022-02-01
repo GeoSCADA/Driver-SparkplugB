@@ -6,7 +6,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>432264f7-ee9b-FF46-93c6-d857118bff75</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>DriverNotifyInstaller</OutputName>
+    <OutputName>DriverSparkplugB</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">

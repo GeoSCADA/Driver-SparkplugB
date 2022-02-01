@@ -21,6 +21,9 @@
               <File Id="SparkplugB.dll" Name="SparkplugB.dll" Source="..\DriverSparkplugB\bin\x64\Debug\SparkplugB.dll" />
               <File Id="M2Mqtt.Net.dll" Name="M2Mqtt.Net.dll" Source="..\DriverSparkplugB\bin\x64\Debug\M2Mqtt.Net.dll" />
               <File Id="Google.Protobuf.dll" Name="Google.Protobuf.dll" Source="..\DriverSparkplugB\bin\x64\Debug\Google.Protobuf.dll" />
+              <File Id="System.Buffers.dll" Name="System.Buffers.dll" Source="..\DriverSparkplugB\bin\x64\Debug\System.Buffers.dll" />
+              <File Id="System.Memory.dll" Name="System.Memory.dll" Source="..\DriverSparkplugB\bin\x64\Debug\System.Memory.dll" />
+              <File Id="System.Runtime.CompilerServices.Unsafe.dll" Name ="System.Runtime.CompilerServices.Unsafe.dll" Source="..\DriverSparkplugB\bin\x64\Debug\System.Runtime.CompilerServices.Unsafe.dll" />
               <RegistryKey Root="HKLM" Key="SOFTWARE\Schneider Electric\ClearSCADA\DriverSparkplugB">
                 <RegistryValue Type="string" Value="SparkplugB"/>
                 <RegistryValue Type="string" Name="AssemblyName" Value="C:\Program Files\Schneider Electric\ClearSCADA\SparkplugB.dll" KeyPath="yes"/>
