@@ -1755,14 +1755,18 @@ namespace DriverSparkplugB
 
         public bool Connect2Net(string user, string password, out ClearScada.Client.Simple.Connection connection, out ClearScada.Client.Advanced.IServer AdvConnection)
         {
-            var node = new ClearScada.Client.ServerNode(ClearScada.Client.ConnectionType.Standard, "127.0.0.1", 5481);
-            connection = new ClearScada.Client.Simple.Connection("SparkplugB");
+			// Older Geo SCADA var node = new ClearScada.Client.ServerNode(ClearScada.Client.ConnectionType.Standard, "127.0.0.1", 5481);
+			var node = new ClearScada.Client.ServerNode("127.0.0.1", 5481);
+			connection = new ClearScada.Client.Simple.Connection("SparkplugB");
             try
             {
                 connection.Connect(node);
-                AdvConnection = node.Connect("SparkplugB-Adv", false);
-            }
-            catch (CommunicationsException)
+				// Older Geo SCADA AdvConnection = node.Connect("SparkplugB-Adv", false);
+				// Newer Geo SCADA Adds the ClientConnectionSettings
+				var ClientSettings = new ClientConnectionSettings();
+				AdvConnection = node.Connect("SparkplugB-Adv", ClientSettings);
+			}
+			catch (CommunicationsException)
             {
                 LogAndEvent("Unable to communicate with ClearSCADA server.");
                 AdvConnection = null;

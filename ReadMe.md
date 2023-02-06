@@ -1,17 +1,21 @@
 Please refer to the file LICENSE.txt for terms relating to this code
+**********************************************************************
+SAMPLE CODE FOR EDUCATION ONLY. THIS CODE MAY NOT BE CYBER-SECURE.
+YOU ARE RESPONSIBLE FOR IMPLEMENTING CYBER-SECURITY FEATURES.
+**********************************************************************
 
 This is code for a Sparkplug B driver for Geo SCADA Expert, written in C# 
 for the Simple Driver Framework.
 
 IMPORTANT
-Please read the Word file available from SE Exchange Shop for a guide
+Please read the file available from SE Exchange Shop for a guide
 to customization and implementation.
 Link: https://shop.exchange.se.com/en-US/apps/61786/
 
 The driver is offered as source code which you can build with Visual 
 Studio. It includes the two parts of the driver and an installer, enabling 
 you to build a package to deploy to Geo SCADA Expert servers. It is not 
-supported.
+supported or warranted in any way by Schneider Electric.
 
 The source code is available for you to freely use, modify and extend to 
 suit your requirements or that of your clients. It is perhaps not the 

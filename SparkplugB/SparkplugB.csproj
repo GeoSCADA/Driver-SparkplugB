@@ -19,7 +19,7 @@
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -78,9 +78,9 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ControlMicrosystems.ClearSCADA.DDK, Version=6.83.7417.1, Culture=neutral, PublicKeyToken=9e16b9dd55e2cd53, processorArchitecture=AMD64">
+    <Reference Include="ControlMicrosystems.ClearSCADA.DDK, Version=6.85.8390.1, Culture=neutral, PublicKeyToken=9e16b9dd55e2cd53, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Schneider Electric\ClearSCADA\ControlMicrosystems.ClearSCADA.DDK.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Program Files\Schneider Electric\ClearSCADA\ControlMicrosystems.ClearSCADA.DDK.dll</HintPath>
     </Reference>
     <Reference Include="Google.Protobuf">
       <HintPath>..\packages\Google.Protobuf.3.12.2\lib\net45\Google.Protobuf.dll</HintPath>
