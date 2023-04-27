@@ -2148,32 +2148,42 @@ namespace DriverSparkplugB
 			object value;
 			switch (r.Datatype)
 			{
-				case 1:
-				case 2:
-				case 3:
-				case 4:
-				case 5:
-				case 6:
-				case 7:
+				case 1:	// Int8
+				case 2: // Int16
+				case 3: // Int32
+				case 5: // UInt8
+				case 6: // UInt16
 					value = r.IntValue;
 					break;
-				case 8:
+				case 7: // UInt32
+					if (r.ValueCase == Payload.Types.Metric.ValueOneofCase.LongValue)
+					{
+						value = r.LongValue;
+					}
+					else
+					{
+						value = r.IntValue;
+					}
+					break;
+				case 4: // Int64
+				case 8: // UInt64
 					value = r.LongValue;
 					break;
-				case 9:
+				case 9: // Float
 					value = r.FloatValue;
 					break;
-				case 10:
+				case 10: // Double
 					value = r.DoubleValue;
 					break;
-				case 11:
+				case 11: // Boolean
 					value = r.BooleanValue;
 					break;
-				case 12:
-				case 15:
+				case 12: // String
+				case 14: // Text
+				case 15: // UUID
 					value = r.StringValue;
 					break;
-				case 13:
+				case 13: // DateTime
 					value = r.LongValue;
 					break;
 				default:
@@ -2245,33 +2255,33 @@ namespace DriverSparkplugB
 			// Get value based on type of control value
 			switch (SPtype)
 			{
-				case 1:
-				case 2:
-				case 3:
-				case 4:
-				case 5:
-				case 6:
-				case 7:
+				case 1:	// Int8
+				case 2: // Int16
+				case 3: // Int32
+				case 5: // UInt8
+				case 6: // UInt16
+				case 7: // UInt32
 					ControlMetric.IntValue = Convert.ToUInt32(value);
 					break;
-				case 8:
-					ControlMetric.LongValue = Convert.ToUInt32(value);
+				case 4: // Int64
+				case 8: // UInt64
+					ControlMetric.LongValue = Convert.ToUInt64(value);
 					break;
-				case 9:
+				case 9: // Float
 					ControlMetric.FloatValue = Convert.ToSingle(value);
 					break;
-				case 10:
+				case 10: // Double
 					ControlMetric.DoubleValue = Convert.ToDouble(value);
 					break;
-				case 11:
-					int intvalue = (byte)value;
-					ControlMetric.BooleanValue = (intvalue != 0);
+				case 11: // Boolean
+					ControlMetric.BooleanValue = Convert.ToBoolean(value);
 					break;
-				case 12:
-				case 15:
+				case 12: // String
+				case 14: // Text
+				case 15: // UUID
 					ControlMetric.StringValue = Convert.ToString(value);
 					break;
-				case 13:
+				case 13: // DateTime
 					ControlMetric.LongValue = Convert.ToUInt64(((DateTime)value - DateTime.Parse("01/Jan/1970")).Milliseconds);
 					break;
 				default:
