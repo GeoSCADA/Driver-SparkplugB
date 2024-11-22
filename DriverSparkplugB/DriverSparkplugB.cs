@@ -2200,6 +2200,10 @@ namespace DriverSparkplugB
 			{
                 ControlAnalogue(Point, Value, QoS);
             }
+			else if (Point.PointType.Name == "SparkplugBPointSt")
+			{
+				ControlString(Point, Value, QoS);
+			}
 			else
 			{
                 throw new Exception("No handler found for " + Point.FullName);
@@ -2222,6 +2226,16 @@ namespace DriverSparkplugB
 			uint SPtype = (uint)((SparkplugBPointAg)entry.DatabaseObject).SPtype;
 			string SPname = ((SparkplugBPointAg)entry.DatabaseObject).SparkplugName;
 			ulong Alias = (ulong)((SparkplugBPointAg)entry.DatabaseObject).Address;
+
+			SendControlMessage(val, SPtype, SPname, Alias, QoS);
+		}
+
+		private void ControlString(PointSourceEntry entry, object val, byte QoS)
+		{
+			SparkplugBPointSt point = (SparkplugBPointSt)(entry.DatabaseObject);
+			uint SPtype = (uint)((SparkplugBPointSt)entry.DatabaseObject).SPtype;
+			string SPname = ((SparkplugBPointSt)entry.DatabaseObject).SparkplugName;
+			ulong Alias = (ulong)((SparkplugBPointSt)entry.DatabaseObject).Address;
 
 			SendControlMessage(val, SPtype, SPname, Alias, QoS);
 		}

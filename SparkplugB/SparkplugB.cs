@@ -1011,6 +1011,9 @@ namespace SparkplugB
 		[ConfigField("SPtype", "Point Type Number", 3, 4, OPCProperty.Base + 72, DefaultOverride = true)]
 		public int SPtype;
 
+		[Aggregate("Enabled", "Control", 0x03600000, "CCtrlString")]
+		public Aggregate Control;
+
 		// Group of configuration fields
 		// Normally an attribute on the first config field of the group
 		[Label("Historic Data Filter", 4, 1, Width = 2, Height = 4)]
