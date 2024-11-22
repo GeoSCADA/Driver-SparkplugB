@@ -292,7 +292,7 @@ namespace DriverSparkplugB
                 }
                 else
                 {
-					if (c.caCertFile == "")
+					if (string.IsNullOrEmpty(c.caCertFile))
 					{
 						client = new MqttClient(c.hostname, c.portnumber, true, (MqttSslProtocols)c.security, null, null);
 					}
@@ -311,7 +311,7 @@ namespace DriverSparkplugB
 						}
 						try
 						{
-							if (c.clientCertFile == null)
+							if (!string.IsNullOrEmpty(c.clientCertFile))
 							{
 								if (c.clientCertFormat == 0) // DER
 								{
