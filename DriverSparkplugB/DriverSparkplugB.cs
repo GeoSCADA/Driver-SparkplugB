@@ -363,10 +363,22 @@ namespace DriverSparkplugB
             client.MqttMsgPublishReceived += Client_MqttMsgPublishReceived;
             client.ConnectionClosed += Client_MqttConnectionClosed;
 
-			// Death certificate
-			string StateTopic = "STATE/" + DBChannel.SCADAHostId;
-			string DeathPayload = "OFFLINE";
-			LogAndEvent("Death Topic: " + StateTopic);
+			bool WillRetain = false;
+			byte WillQoS = 0;
+			bool WillFlag = false;
+			string StateTopic = null;
+			string DeathPayload = null;
+
+			if (!string.IsNullOrEmpty(DBChannel.SCADAHostId))
+			{
+				// Death certificate
+				WillRetain = !c.CleanConnect;
+				WillQoS = 1;
+				WillFlag = true;
+				StateTopic = "STATE/" + DBChannel.SCADAHostId;
+				DeathPayload = "OFFLINE";
+				LogAndEvent("Death Topic: " + StateTopic);
+			}
 
 			//string clientId = Guid.NewGuid().ToString();
 			try
@@ -375,12 +387,12 @@ namespace DriverSparkplugB
                 if (c.username == null || c.username == "")
                 {
                     // create client instance 
-                    client.Connect(c.clientId, "", "", !c.CleanConnect, 1, true, StateTopic, DeathPayload, c.CleanConnect, 60);
+                    client.Connect(c.clientId, "", "", WillRetain, WillQoS, WillFlag, StateTopic, DeathPayload, c.CleanConnect, 60);
                 }
                 else
                 {
                     // create client instance with login.
-                    client.Connect(c.clientId, c.username, c.password, !c.CleanConnect, 1, true, StateTopic, DeathPayload, c.CleanConnect, 60);
+                    client.Connect(c.clientId, c.username, c.password, WillRetain, WillQoS, WillFlag, StateTopic, DeathPayload, c.CleanConnect, 60);
                 }
             }
             catch (Exception Fault)
@@ -391,10 +403,13 @@ namespace DriverSparkplugB
                 return false;
             }
 
-			// Send birth certificate
-			string BirthPayload = "ONLINE";
-			byte[] BirthPayloadBytes = Encoding.ASCII.GetBytes( BirthPayload);
-			DoPublish(StateTopic, BirthPayloadBytes, c.PubQoS, true);
+			if (!string.IsNullOrEmpty(DBChannel.SCADAHostId))
+			{
+				// Send birth certificate
+				string BirthPayload = "ONLINE";
+				byte[] BirthPayloadBytes = Encoding.ASCII.GetBytes(BirthPayload);
+				DoPublish(StateTopic, BirthPayloadBytes, c.PubQoS, true);
+			}
 
 			// subscribe to the topic (namespace / group) with wildcard and QoS 2 MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE
 			// Can we do this to the local broker to ensure safe delivery?
